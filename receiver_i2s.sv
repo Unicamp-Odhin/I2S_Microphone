@@ -1,20 +1,20 @@
 module receiver_i2s #(
-    parameter DATA_SIZE = 16 // Permite alterar para 8, 16, 24 ou 32
+    parameter int DATA_SIZE = 16 // Permite alterar para 8, 16, 24 ou 32
 )(
-    input wire clk,
-    input wire rst,
-    input wire i2s_sd,
-    output wire i2s_ws,
-    output reg [DATA_SIZE-1:0] audio_data
+    input  logic clk,
+    input  logic rst,
+    input  logic i2s_sd,
+    output logic i2s_ws,
+    output logic [DATA_SIZE-1:0] audio_data
 );
 
-    reg [DATA_SIZE-1:0] tmp_buffer;
-    reg [$clog2(DATA_SIZE):0] bit_count;
+    logic [DATA_SIZE-1:0] tmp_buffer;
+    logic [$clog2(DATA_SIZE):0] bit_count;
 
-    reg i2s_ws_reg;
+    logic i2s_ws_reg;
     assign i2s_ws = i2s_ws_reg;
 
-    always @(posedge clk or posedge rst) begin
+    always_ff @(posedge clk or posedge rst) begin
         if (rst) begin
             i2s_ws_reg <= 1'b0;
         end else if (bit_count == DATA_SIZE) begin
@@ -22,9 +22,9 @@ module receiver_i2s #(
         end
     end
 
-    always @(posedge clk or posedge rst) begin
+    always_ff @(posedge clk or posedge rst) begin
         if (rst) begin
-            tmp_buffer <= {DATA_SIZE{1'b0}};
+            tmp_buffer <= '0;
             bit_count <= 0;
         end else begin
             if (bit_count < DATA_SIZE) begin
