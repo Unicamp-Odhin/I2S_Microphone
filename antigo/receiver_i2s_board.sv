@@ -1,18 +1,18 @@
 module receiver_i2s_board (
     input logic clk,
-    input logic SD,
-    output logic WS,
-    output logic SCK,
+    input logic M_DATA,
+    output logic M_LRSEL,
+    output logic M_CLK,
     output logic LED0, LED1, LED2, LED3, LED4, LED5, LED6, LED7
 );
     logic [15:0] audio_data;
-    logic rst = 1'b0;
+    logic rst_n = 1'b1;
 
     logic [2:0] counter;
     always_ff @(posedge clk) begin
         if (counter == 3'b0) begin
             counter <= 0;
-            SCK <= ~SCK;
+            M_CLK <= ~M_CLK;
         end else begin
             counter <= counter + 1;
         end
@@ -60,10 +60,10 @@ module receiver_i2s_board (
     receiver_i2s #(
         .DATA_SIZE(16)
     ) i2s_receiver (
-        .clk(SCK),
-        .rst(rst),
-        .i2s_ws(WS),
-        .i2s_sd(SD),
+        .clk(M_CLK),
+        .rst_n(rst_n),
+        .i2s_ws(M_LRSEL),
+        .i2s_sd(M_DATA),
         .audio_data(audio_data)
     );
 endmodule
