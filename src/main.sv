@@ -2,13 +2,17 @@ module main (
     input  logic clk,         // board clock 25mhz 
 
     input  logic M_DATA,      // microfone data
-    output  logic M_CLK,      // microfone clock
+    output logic M_CLK = 0,      // microfone clock
     output logic M_LRSEL,     // Left/Right Select
     
-    input  logic cs,          // enable spi
-    input  logic mosi,
+    input logic cs,          // enable spi
+    input logic mosi,
     input logic sck,
     output logic miso,
+
+    output logic [15:0] pcm_out,
+    output logic pcm_ready,
+    input logic rst_n,
 
     output logic LED0, LED1, LED2, LED3, LED4, LED5, LED6, LED7
 );
@@ -18,20 +22,25 @@ logic data_in_valid, busy, data_out_valid, busy_posedge;
 
 logic [7:0] spi_send_data;
 
-logic [15:0] pcm_out;
-logic pcm_ready;
+// logic [15:0] pcm_out;
+// logic pcm_ready;
 
-logic rst_n;
-assign rst_n = 1'b1;
+// logic rst_n;
+// assign rst_n = 1'b1;
 
 // Clock do microfone
 logic [2:0] counter;
 always_ff @(posedge clk) begin
-    if (counter == 3'b0) begin
-        counter <= 0;
-        M_CLK <= ~M_CLK;
+    if (rst_n) begin
+        if (counter == 3'b111) begin
+            counter <= 0;
+            M_CLK <= ~M_CLK;
+        end else begin
+            counter <= counter + 1;
+        end
     end else begin
-        counter <= counter + 1;
+        counter <= 0;
+        M_CLK <= 1'b0;
     end
 end
 
@@ -106,10 +115,10 @@ always_ff @(posedge clk) begin
     if(!rst_n) begin
         write_fifo_state <= IDLE;
     end else begin
-        unique case (write_fifo_state)
+        // unique case (write_fifo_state)
+        case (write_fifo_state)
             IDLE: begin
                 if(pcm_ready && !fifo_full) begin
-                    // fifo_write_data <= 8'h0A;
                     fifo_write_data <= pcm_out[7:0];
                     fifo_wr_en      <= 1'b1;
                     write_fifo_state <= WRITE_FIRST_BYTE;
@@ -117,7 +126,6 @@ always_ff @(posedge clk) begin
             end 
             WRITE_FIRST_BYTE: begin
                 if(!fifo_full) begin
-                    // fifo_write_data <= 8'h0A;
                     fifo_write_data <= pcm_out[15:8];
                     fifo_wr_en      <= 1'b1;
                     write_fifo_state <= WRITE_SECOND_BYTE;

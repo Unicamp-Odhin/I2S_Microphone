@@ -1,13 +1,13 @@
 module leds (
     input  logic clk,         // board clock 25mhz 
-    input  logic [7:0] data_in,
+    input  logic [15:0] data_in,
     output logic [7:0] led
 );
 
     logic [32:0] counter2;
     logic clk2;
     always_ff @(posedge clk) begin
-        if (counter2 == 32'd300000) begin
+        if (counter2 == 32'd3000000) begin
             counter2 <= 0;
             clk2 <= ~clk2;
         end else begin

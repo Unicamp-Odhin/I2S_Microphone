@@ -10,23 +10,28 @@ module receiver_i2s #(
 );
 
     logic [DATA_SIZE-1:0] tmp_buffer;
-    logic [$clog2(DATA_SIZE) + 1:0] bit_count;
+    logic [$clog2(DATA_SIZE) + 1:0] bit_count = 0;
 
-    logic i2s_ws_reg;
+    logic i2s_ws_reg = 0;
     assign i2s_ws = i2s_ws_reg;
 
-    always_ff @(posedge clk) begin
+    always_ff @(negedge clk) begin
         if (!rst_n) begin
             i2s_ws_reg <= 1'b0;
-        end else if (bit_count == DATA_SIZE) begin
-            i2s_ws_reg <= ~i2s_ws_reg; 
+        end else begin
+            if (ready) begin
+                i2s_ws_reg <= ~i2s_ws_reg;
+            end
         end
     end
 
+
+    // geralemente com o bit mais significativo primeiro
     always_ff @(posedge clk) begin
         if (!rst_n) begin
-            tmp_buffer <= '0;
+            tmp_buffer <= 0;
             bit_count <= 0;
+            audio_data <= 0;
             ready <= 1'b0;
         end else begin
             if (bit_count < DATA_SIZE) begin
