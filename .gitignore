@@ -2,6 +2,9 @@
 **/*.config
 **/*.json
 **/*.vcd
+*.hex
+*.wav
+*.bin
 build/
 digilent_arty.cache/
 digilent_arty.hw/
