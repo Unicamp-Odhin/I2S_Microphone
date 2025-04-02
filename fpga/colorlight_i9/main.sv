@@ -14,7 +14,7 @@ module main (
     output logic pcm_ready,
     input logic rst_n,
 
-    output logic LED0, LED1, LED2, LED3, LED4, LED5, LED6, LED7
+    output logic [7:0] LED
 );
 
 logic [2:0] busy_sync;
@@ -60,7 +60,7 @@ receiver_i2s #(
 leds u_leds (
     .clk(clk),
     .data_in(pcm_out),
-    .led({LED7, LED6, LED5, LED4, LED3, LED2, LED1, LED0})
+    .led(LED)
 );
 
 
