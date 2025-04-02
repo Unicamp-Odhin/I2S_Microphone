@@ -16,8 +16,8 @@ load: out.bit
 	openFPGALoader -b colorlight-i9 out.bit
 
 iverilog:
-	iverilog -g2012 -o receiver_i2s_tb -s receiver_i2s_tb *.sv simulation/receiver_i2s_tb.sv
-	vvp receiver_i2s_tb
+	iverilog -g2012 -o main_tb -s main_tb *.sv simulation/main_tb.sv
+	vvp main_tb
 
 clean:
 	rm -f out.json out.config out.bit

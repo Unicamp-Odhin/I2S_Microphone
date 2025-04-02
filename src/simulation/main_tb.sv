@@ -37,18 +37,19 @@ module main_tb;
 
     always #2500 sck = ~sck; 
 
-    logic [7:0] memory [0 : 9]; // Dados de teste
+    logic [7:0] memory [0 : 10]; // Dados de teste
     initial begin
-        memory[0] = 8'hAA;
-        memory[1] = 8'hAA;
-        memory[2] = 8'hAA;
-        memory[3] = 8'hAA;
-        memory[4] = 8'hAA;
-        memory[5] = 8'hAA;
-        memory[6] = 8'hAA;
-        memory[7] = 8'hAA;
-        memory[8] = 8'hAA;
-        memory[9] = 8'hAA;
+        memory[0] = 8'h00;
+        memory[1] = 8'h01;
+        memory[2] = 8'h02;
+        memory[3] = 8'h03;
+        memory[4] = 8'h04;
+        memory[5] = 8'h05;
+        memory[6] = 8'h06;
+        memory[7] = 8'h07;
+        memory[8] = 8'h08;
+        memory[9] = 8'h09;
+        memory[10] = 8'h0A; // Adicione mais dados conforme necessário
     end
 
     initial begin

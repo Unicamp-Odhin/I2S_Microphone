@@ -109,6 +109,8 @@ typedef enum logic [1:0] {
 
 write_fifo_state_t write_fifo_state;
 
+
+// Estado do FIFO
 always_ff @(posedge clk) begin
     fifo_wr_en <= 1'b0;
 
@@ -151,6 +153,7 @@ end
 
 logic write_back_fifo;
 
+// Leitura do FIFO
 always_ff @(posedge clk) begin
     fifo_rd_en <= 1'b0;
 
