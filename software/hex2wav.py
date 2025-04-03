@@ -8,7 +8,7 @@ SAMPLE_RATE = 48828  # Frequência de amostragem (em Hz)
 NUM_CHANNELS = 1     # Número de canais (1 = mono, 2 = estéreo)
 SAMPLE_WIDTH = 2     # Largura de amostra (em bytes, 2 = 16 bits)
 AMPLITUDE = 32767    # Amplitude máxima para 16 bits
-LITTLE_ENDIAN = False  # Altere para False para usar big-endian
+LITTLE_ENDIAN = True  # Altere para False para usar big-endian
 
 
 def hex_to_wav(input_file, output_file):
@@ -46,8 +46,8 @@ def hex_to_wav(input_file, output_file):
 #     hex_to_wav(input_file, output_file)
 
 if __name__ == "__main__":
-    for n in range(0, 16):
-        os.makedirs("wav", exist_ok=True)
-        input_file = "hex/output_shift.hex".replace(".hex", f"_{n}.hex")
-        output_file = input_file.replace(".hex", ".wav").replace("hex/", "wav/")
-        hex_to_wav(input_file, output_file)
+#    for n in range(0, 1):
+#        os.makedirs("wav", exist_ok=True)
+#        input_file = "output.hex"
+#        output_file = input_file.replace(".hex", ".wav").replace("hex/", "wav/")
+#        hex_to_wav(input_file, output_file)
