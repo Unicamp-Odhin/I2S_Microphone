@@ -79,14 +79,14 @@
 # ----------------------------------------------------------------------------
 # Clock Source - Bank 13
 # ---------------------------------------------------------------------------- 
-#set_property PACKAGE_PIN Y9 [get_ports {GCLK}];  # "GCLK"
+set_property PACKAGE_PIN Y9 [get_ports {clk}];  # "GCLK"
 
 # ----------------------------------------------------------------------------
 # JA Pmod - Bank 13 
 # ---------------------------------------------------------------------------- 
-set_property PACKAGE_PIN Y11  [get_ports {M_LRSEL}];  # "JA1" #WS
-set_property PACKAGE_PIN Y10  [get_ports {M_DATA}];  # "JA3"  #SD
-set_property PACKAGE_PIN AA9  [get_ports {M_CLK}];  # "JA4"   #SCK 
+set_property PACKAGE_PIN Y11  [get_ports {i2s_ws}];  # "JA1" #WS
+set_property PACKAGE_PIN Y10  [get_ports {i2s_sd}];  # "JA3"  #SD
+set_property PACKAGE_PIN AA9  [get_ports {i2s_clk}];  # "JA4"   #SCK 
 #set_property PACKAGE_PIN AA8  [get_ports {JA10}];  # "JA10"
 #set_property PACKAGE_PIN AA11 [get_ports {JA2}];  # "JA2"
 #set_property PACKAGE_PIN AB11 [get_ports {JA7}];  # "JA7"
@@ -109,12 +109,12 @@ set_property PACKAGE_PIN V8  [get_ports {LED[7]}];  # "JB10"
 # ----------------------------------------------------------------------------
 # JC Pmod - Bank 13
 # ---------------------------------------------------------------------------- 
-#set_property PACKAGE_PIN AB6 [get_ports {JC1_N}];  # "JC1_N"
-#set_property PACKAGE_PIN AB7 [get_ports {JC1_P}];  # "JC1_P"
-#set_property PACKAGE_PIN AA4 [get_ports {JC2_N}];  # "JC2_N"
-#set_property PACKAGE_PIN Y4  [get_ports {JC2_P}];  # "JC2_P"
-#set_property PACKAGE_PIN T6  [get_ports {JC3_N}];  # "JC3_N"
-#set_property PACKAGE_PIN R6  [get_ports {JC3_P}];  # "JC3_P"
+set_property PACKAGE_PIN AB6 [get_ports {rx}];  # "JC1_N"
+set_property PACKAGE_PIN AB7 [get_ports {tx}];  # "JC1_P"
+set_property PACKAGE_PIN AA4 [get_ports {mosi}];  # "JC2_N"
+set_property PACKAGE_PIN Y4  [get_ports {miso}];  # "JC2_P"
+set_property PACKAGE_PIN T6  [get_ports {sck}];  # "JC3_N"
+set_property PACKAGE_PIN R6  [get_ports {cs}];  # "JC3_P"
 #set_property PACKAGE_PIN U4  [get_ports {JC4_N}];  # "JC4_N"
 #set_property PACKAGE_PIN T4  [get_ports {JC4_P}];  # "JC4_P"
 

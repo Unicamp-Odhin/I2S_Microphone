@@ -1,0 +1,61 @@
+#-----------------------------------------------------------
+# Vivado v2024.1 (64-bit)
+# SW Build 5076996 on Wed May 22 18:36:09 MDT 2024
+# IP Build 5075265 on Wed May 22 21:45:21 MDT 2024
+# SharedData Build 5076995 on Wed May 22 18:29:18 MDT 2024
+# Start of session at: Fri Apr 11 18:21:13 2025
+# Process ID: 428203
+# Current directory: /home/kant/development/Rofofo/read_i2s/fpga/zedboard
+# Command line: vivado -mode batch -source program_fpga.tcl
+# Log file: /home/kant/development/Rofofo/read_i2s/fpga/zedboard/vivado.log
+# Journal file: /home/kant/development/Rofofo/read_i2s/fpga/zedboard/vivado.jou
+# Running On        :arch
+# Platform          :unknown
+# Operating System  :unknown
+# Processor Detail  :Intel(R) Core(TM) i5-1035G1 CPU @ 1.00GHz
+# CPU Frequency     :3158.561 MHz
+# CPU Physical cores:4
+# CPU Logical cores :8
+# Host memory       :16492 MB
+# Swap memory       :29999 MB
+# Total Virtual     :46492 MB
+# Available Virtual :40958 MB
+#-----------------------------------------------------------
+source program_fpga.tcl
+# open_hw_manager
+open_hw_manager: Time (s): cpu = 00:00:07 ; elapsed = 00:00:06 . Memory (MB): peak = 1434.441 ; gain = 0.023 ; free physical = 2555 ; free virtual = 38644
+# connect_hw_server
+INFO: [Labtools 27-2285] Connecting to hw_server url TCP:localhost:3121
+INFO: [Labtools 27-2222] Launching hw_server...
+INFO: [Labtools 27-2221] Launch Output:
+
+****** Xilinx hw_server v2024.1
+  **** Build date : May 22 2024 at 19:19:01
+    ** Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
+
+
+INFO: [Labtools 27-3415] Connecting to cs_server url TCP:localhost:0
+INFO: [Labtools 27-3417] Launching cs_server...
+INFO: [Labtools 27-2221] Launch Output:
+
+
+******** Xilinx cs_server v2024.1.0
+  ****** Build date   : Apr 26 2024-22:40:49
+    **** Build number : 2024.1.1714182049
+      ** Copyright 2017-2022 Xilinx, Inc. All Rights Reserved.
+      ** Copyright 2022-2025 Advanced Micro Devices, Inc. All Rights Reserved.
+
+
+
+# current_hw_target [get_hw_targets "localhost:3121/xilinx_tcf/Digilent/210248722948"]
+# open_hw_target
+INFO: [Labtoolstcl 44-466] Opening hw_target localhost:3121/xilinx_tcf/Digilent/210248722948
+# set_property PROGRAM.FILE {build/out.bit} [get_hw_devices xc7z020_0]
+# program_hw_devices [get_hw_devices xc7z020_0]
+ERROR: [Labtools 27-3165] End of startup status: LOW
+ERROR: [Common 17-39] 'program_hw_devices' failed due to earlier errors.
+
+    while executing
+"program_hw_devices [get_hw_devices xc7z020_0]"
+    (file "program_fpga.tcl" line 11)
+INFO: [Common 17-206] Exiting Vivado at Fri Apr 11 18:21:27 2025...

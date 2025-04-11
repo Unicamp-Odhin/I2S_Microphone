@@ -1,0 +1,24 @@
+#-----------------------------------------------------------
+# Vivado v2024.1 (64-bit)
+# SW Build 5076996 on Wed May 22 18:36:09 MDT 2024
+# IP Build 5075265 on Wed May 22 21:45:21 MDT 2024
+# SharedData Build 5076995 on Wed May 22 18:29:18 MDT 2024
+# Start of session at: Fri Apr 11 18:21:13 2025
+# Process ID: 428203
+# Current directory: /home/kant/development/Rofofo/read_i2s/fpga/zedboard
+# Command line: vivado -mode batch -source program_fpga.tcl
+# Log file: /home/kant/development/Rofofo/read_i2s/fpga/zedboard/vivado.log
+# Journal file: /home/kant/development/Rofofo/read_i2s/fpga/zedboard/vivado.jou
+# Running On        :arch
+# Platform          :unknown
+# Operating System  :unknown
+# Processor Detail  :Intel(R) Core(TM) i5-1035G1 CPU @ 1.00GHz
+# CPU Frequency     :3158.561 MHz
+# CPU Physical cores:4
+# CPU Logical cores :8
+# Host memory       :16492 MB
+# Swap memory       :29999 MB
+# Total Virtual     :46492 MB
+# Available Virtual :40958 MB
+#-----------------------------------------------------------
+source program_fpga.tcl
