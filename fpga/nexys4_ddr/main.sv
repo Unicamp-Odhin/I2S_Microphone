@@ -12,8 +12,6 @@ module top (
     input  logic sck,
     input  logic cs,
 
-    input  logic [15:0] SW,
-
     output logic [3:0] VGA_R,
     output logic [3:0] VGA_G,
     output logic [3:0] VGA_B,
