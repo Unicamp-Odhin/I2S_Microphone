@@ -30,7 +30,7 @@ always_ff @(posedge clk) begin
         read_ptr    <= 'd0;
         read_data_o <= 'd0;
     end else if (rd_en_i && !empty_o) begin
-        read_data_o <= memory[read_ptr[PTR_WIDTH-1:0]];
+        read_data_o <= memory[read_ptr];
         read_ptr    <= read_ptr + 1;
     end
 end
@@ -40,13 +40,13 @@ always_ff @(posedge clk) begin
     if (!rst_n) begin
         write_ptr <= 'd0;
     end else if (wr_en_i && !full_o) begin
-        memory[write_ptr[PTR_WIDTH-1:0]] <= write_data_i;
+        memory[write_ptr] <= write_data_i;
         write_ptr                        <= write_ptr + 1;
     end
 end
 
 // FIFO cheia: ocorre quando o próximo `write_ptr` encontra `read_ptr`
-assign full_o = (write_ptr + 1 == read_ptr);
+assign full_o = ((write_ptr + 1) == read_ptr);
 
 // FIFO vazia: ocorre quando os ponteiros são iguais
 assign empty_o = (write_ptr == read_ptr);

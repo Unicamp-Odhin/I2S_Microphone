@@ -5,7 +5,8 @@ module top (
     input  logic rx,
     output logic tx,
 
-    output logic [15:0]LED,
+    input  logic [15:0] SW,
+    output logic [15:0] LED,
 
     input  logic mosi,
     output logic miso,
@@ -25,7 +26,9 @@ module top (
 
     output logic i2s_clk,    // Clock do I2S
     output logic i2s_ws,     // Word Select do I2S
-    input  logic i2s_sd      // Dados do I2S
+    input  logic i2s_sd,     // Dados do I2S
+
+    output logic [7:0] JC
 );
 
 logic [2:0] busy_sync;
@@ -33,38 +36,27 @@ logic data_in_valid, busy, data_out_valid, busy_posedge;
 
 logic [7:0] spi_send_data;
 
-logic [15:0] pcm_out;
+logic [23:0] pcm_out;
 logic pcm_ready;
 
 logic rst_n;
 assign rst_n = CPU_RESETN;
 
-// Clock do microfone
-logic [2:0] counter;
-always_ff @(posedge clk) begin
-    if (rst_n) begin
-        if (counter == 3'b111) begin
-            counter <= 0;
-            i2s_clk <= ~i2s_clk;
-        end else begin
-            counter <= counter + 1;
-        end
-    end else begin
-        counter <= 0;
-        i2s_clk <= 1'b0;
-    end
-end
-
 // Instanciação do módulo
 receiver_i2s #(
-    .DATA_SIZE(16)
+    .DATA_SIZE    (24),
+    .CLK_FREQ     (100_000_000), // Frequência do clock do sistema
+    .I2S_CLK_FREQ (3_072_000)    // Frequência do clock PDM
 ) u_i2s_receiver (
-    .clk(i2s_clk),     
-    .rst_n(rst_n),
-    .i2s_ws(i2s_ws),
-    .i2s_sd(i2s_sd),
-    .audio_data(pcm_out),
-    .ready(pcm_ready)
+    .clk        (clk),     
+    .rst_n      (rst_n),
+    
+    .i2s_ws     (i2s_ws),
+    .i2s_sd     (i2s_sd),
+    .i2s_clk    (i2s_clk),
+
+    .audio_data (pcm_out),
+    .ready      (pcm_ready)
 );
 
 // LEDS
@@ -88,7 +80,7 @@ SPI_Slave U1(
     .data_out_valid (data_out_valid),
     .busy           (busy),
 
-    .data_in       (spi_send_data),
+    .data_in        (spi_send_data),
     .data_out       ()
 );
 
@@ -96,8 +88,9 @@ SPI_Slave U1(
 logic fifo_wr_en, fifo_rd_en, fifo_full, fifo_empty;
 logic [7:0] fifo_read_data, fifo_write_data;
 
+
 FIFO #(
-    .DEPTH        (32768), // 16kB
+    .DEPTH        (524288), // 64kB
     .WIDTH        (8)
 ) tx_fifo (
     .clk          (clk),
@@ -115,7 +108,8 @@ FIFO #(
 typedef enum logic [1:0] { 
     IDLE,
     WRITE_FIRST_BYTE,
-    WRITE_SECOND_BYTE
+    WRITE_SECOND_BYTE,
+    WRITE_THIRD_BYTE
 } write_fifo_state_t;
 
 write_fifo_state_t write_fifo_state;
@@ -133,13 +127,17 @@ always_ff @(posedge clk) begin
             IDLE: begin
                 if(pcm_ready && !fifo_full) begin
                     fifo_write_data <= pcm_out[7:0];
+                    // fifo_write_data <= 8'hAA;
                     fifo_wr_en      <= 1'b1;
                     write_fifo_state <= WRITE_FIRST_BYTE;
+                end else begin
+                    fifo_wr_en <= 1'b0;
                 end
             end 
             WRITE_FIRST_BYTE: begin
                 if(!fifo_full) begin
                     fifo_write_data <= pcm_out[15:8];
+                    // fifo_write_data <= 8'hBB;
                     fifo_wr_en      <= 1'b1;
                     write_fifo_state <= WRITE_SECOND_BYTE;
                 end else begin
@@ -147,6 +145,16 @@ always_ff @(posedge clk) begin
                 end
             end
             WRITE_SECOND_BYTE: begin
+                if(!fifo_full) begin
+                    fifo_write_data <= pcm_out[23:16];
+                    // fifo_write_data <= 8'hCC;
+                    fifo_wr_en      <= 1'b1;
+                    write_fifo_state  <= WRITE_THIRD_BYTE;
+                end else begin
+                    fifo_wr_en <= 1'b0;
+                end
+            end 
+            WRITE_THIRD_BYTE: begin
                 write_fifo_state <= IDLE;
             end
             default: write_fifo_state <= IDLE;
@@ -175,7 +183,7 @@ always_ff @(posedge clk) begin
     end else begin
         if(busy_posedge) begin
             if(fifo_empty) begin
-                spi_send_data <= 8'b0;
+                // spi_send_data <= 8'b0;
                 data_in_valid <= 1'b1;
             end else begin
                 fifo_rd_en <= 1'b1;
@@ -195,5 +203,21 @@ always_ff @(posedge clk) begin
 end
 
 assign busy_posedge = (busy_sync[2:1] == 2'b01) ? 1'b1 : 1'b0;
+
+assign VGA_R  = 4'b0000;
+assign VGA_G  = 4'b0000;
+assign VGA_B  = 4'b0000;
+assign VGA_HS = 1'b0;
+assign VGA_VS = 1'b0;
+
+assign JC[0] = ~fifo_empty;
+assign JC[1] = 1'b1;
+assign JC[2] = ~fifo_full;
+assign JC[3] = 1'b1;
+assign JC[4] = ~busy;
+assign JC[5] = 1'b1;
+assign JC[6] = 1'b1;
+assign JC[7] = 1'b1;
+
 endmodule
 
