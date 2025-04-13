@@ -9,6 +9,7 @@ def read_wav(file_path):
         frame_rate = wav_file.getframerate()
         n_frames = wav_file.getnframes()
         
+        
         frames = wav_file.readframes(n_frames)
         signal = np.frombuffer(frames, dtype=np.int16)
         
@@ -29,7 +30,7 @@ def main(file_path):
     positive_freqs = frequencies[:len(frequencies) // 2]
     positive_fft = np.abs(fft_signal[:len(fft_signal) // 2])
 
-    mask = (positive_freqs >= 40) & (positive_freqs <= 2000)
+    mask = (positive_freqs >= 60) & (positive_freqs <= 600)
     filtered_fft = np.zeros_like(fft_signal)
     filtered_fft[:len(positive_fft)][mask] = fft_signal[:len(positive_fft)][mask]
     filtered_fft[-len(positive_fft):][mask[::-1]] = fft_signal[-len(positive_fft):][mask[::-1]]
@@ -38,10 +39,10 @@ def main(file_path):
 
     filtered_signal = np.real(filtered_signal)
 
-    output_file_path = file_path.replace('wav/', 'filter/')
+    output_file_path = 'saida.wav'
     with wave.open(output_file_path, 'w') as wav_file:
-        wav_file.setnchannels(1)
-        wav_file.setsampwidth(2) 
+        wav_file.setnchannels(2)
+        wav_file.setsampwidth(3) 
         wav_file.setframerate(wave.open(file_path, 'r').getframerate())
         filtered_signal_int16 = np.int16(filtered_signal)
         wav_file.writeframes(filtered_signal_int16.tobytes())
@@ -51,8 +52,6 @@ import os
 
 if __name__ == "__main__":
     os.makedirs('filter', exist_ok=True)
-    folder_path = sys.argv[1]
-    for file_name in os.listdir(folder_path):
-        file_path = os.path.join(folder_path, file_name)
-        if os.path.isfile(file_path) and file_name.endswith('.wav'):
-            main(file_path)
+    file_path = 'dump.wav'
+
+    main(file_path)

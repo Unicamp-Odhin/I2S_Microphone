@@ -10,14 +10,14 @@ out.config: out.json pinout.lpf
 	--package CABGA381 --45k --speed 6 --lpf-allow-unconstrained
 
 out.json: main.sv
-	yosys -p "read_verilog -sv main.sv; read_verilog -sv ../../src/*.sv; \
+	yosys -p "read_verilog -sv main.sv; read_verilog -sv ../../rtl/*.sv; \
 		synth_ecp5 -json out.json -abc9"
 
 load: out.bit
 	openFPGALoader -b colorlight-i9 out.bit
 
 iverilog:
-	iverilog -g2012 -o main_tb -s main_tb main.sv ../../src/main.sv simulation/main_tb.sv
+	iverilog -g2012 -o main_tb -s main_tb main.sv ../../rtl/main.sv simulation/main_tb.sv
 	vvp main_tb
 
 clean:

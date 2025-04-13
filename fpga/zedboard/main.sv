@@ -1,27 +1,32 @@
 module top (
     input  logic clk,
-    input  logic CPU_RESETN,
+    // input  logic CPU_RESETN,
 
     input  logic rx,
     output logic tx,
 
-    output logic [15:0]LED,
+    output logic [7:0] LED,
+    output logic [7:0] PMOD_LED,
 
     input  logic mosi,
     output logic miso,
     input  logic sck,
     input  logic cs,
 
-    output logic [3:0] VGA_R,
-    output logic [3:0] VGA_G,
-    output logic [3:0] VGA_B,
-    output logic VGA_HS,
-    output logic VGA_VS,
+    input  logic rst,
 
-    output logic M_CLK,      // Clock do microfone
-    output logic M_LRSEL,    // Left/Right Select (Escolha do canal)
+    // input  logic [15:0] SW,
 
-    input  logic M_DATA,     // Dados do microfone
+    // output logic [3:0] VGA_R,
+    // output logic [3:0] VGA_G,
+    // output logic [3:0] VGA_B,
+    // output logic VGA_HS,
+    // output logic VGA_VS,
+
+    // output logic M_CLK,      // Clock do microfone
+    // output logic M_LRSEL,    // Left/Right Select (Escolha do canal)
+
+    // input  logic M_DATA,     // Dados do microfone
 
     output logic i2s_clk,    // Clock do I2S
     output logic i2s_ws,     // Word Select do I2S
@@ -33,17 +38,18 @@ logic data_in_valid, busy, data_out_valid, busy_posedge;
 
 logic [7:0] spi_send_data;
 
-logic [15:0] pcm_out;
+logic [23:0] pcm_out;
 logic pcm_ready;
 
 logic rst_n;
-assign rst_n = CPU_RESETN;
+// assign rst_n = 1'b1; // CPU_RESETN;
+assign rst_n = ~rst;
 
 // Clock do microfone
-logic [2:0] counter;
+logic [4:0] counter;
 always_ff @(posedge clk) begin
     if (rst_n) begin
-        if (counter == 3'b111) begin
+        if (counter == 5'b11111) begin
             counter <= 0;
             i2s_clk <= ~i2s_clk;
         end else begin
@@ -57,7 +63,7 @@ end
 
 // Instanciação do módulo
 receiver_i2s #(
-    .DATA_SIZE(16)
+    .DATA_SIZE(24)
 ) u_i2s_receiver (
     .clk(i2s_clk),     
     .rst_n(rst_n),
@@ -96,8 +102,12 @@ SPI_Slave U1(
 logic fifo_wr_en, fifo_rd_en, fifo_full, fifo_empty;
 logic [7:0] fifo_read_data, fifo_write_data;
 
+assign PMOD_LED[0] = ~fifo_full;
+assign PMOD_LED[1] = ~fifo_empty;
+
+
 FIFO #(
-    .DEPTH        (32768), // 16kB
+    .DEPTH        (65536), // 64kB
     .WIDTH        (8)
 ) tx_fifo (
     .clk          (clk),
@@ -115,7 +125,8 @@ FIFO #(
 typedef enum logic [1:0] { 
     IDLE,
     WRITE_FIRST_BYTE,
-    WRITE_SECOND_BYTE
+    WRITE_SECOND_BYTE,
+    WRITE_THIRD_BYTE
 } write_fifo_state_t;
 
 write_fifo_state_t write_fifo_state;
@@ -133,13 +144,17 @@ always_ff @(posedge clk) begin
             IDLE: begin
                 if(pcm_ready && !fifo_full) begin
                     fifo_write_data <= pcm_out[7:0];
+                    // fifo_write_data <= 8'hAA;
                     fifo_wr_en      <= 1'b1;
                     write_fifo_state <= WRITE_FIRST_BYTE;
+                end else begin
+                    fifo_wr_en <= 1'b0;
                 end
             end 
             WRITE_FIRST_BYTE: begin
                 if(!fifo_full) begin
                     fifo_write_data <= pcm_out[15:8];
+                    // fifo_write_data <= 8'hBB;
                     fifo_wr_en      <= 1'b1;
                     write_fifo_state <= WRITE_SECOND_BYTE;
                 end else begin
@@ -147,6 +162,16 @@ always_ff @(posedge clk) begin
                 end
             end
             WRITE_SECOND_BYTE: begin
+                if(!fifo_full) begin
+                    fifo_write_data <= pcm_out[23:16];
+                    // fifo_write_data <= 8'hCC;
+                    fifo_wr_en      <= 1'b1;
+                    write_fifo_state  <= WRITE_THIRD_BYTE;
+                end else begin
+                    fifo_wr_en <= 1'b0;
+                end
+            end 
+            WRITE_THIRD_BYTE: begin
                 write_fifo_state <= IDLE;
             end
             default: write_fifo_state <= IDLE;
@@ -175,7 +200,7 @@ always_ff @(posedge clk) begin
     end else begin
         if(busy_posedge) begin
             if(fifo_empty) begin
-                spi_send_data <= 8'b0;
+                // spi_send_data <= 8'b0;
                 data_in_valid <= 1'b1;
             end else begin
                 fifo_rd_en <= 1'b1;
