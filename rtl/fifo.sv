@@ -32,6 +32,8 @@ always_ff @(posedge clk) begin
     end else if (rd_en_i && !empty_o) begin
         read_data_o <= memory[read_ptr];
         read_ptr    <= read_ptr + 1;
+    end else if (rd_en_i && empty_o) begin // teste, para saber o que remover
+        read_data_o <= 'd0;
     end
 end
 

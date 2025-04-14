@@ -3,6 +3,7 @@ read_verilog -sv ../../rtl/fifo.sv
 read_verilog -sv ../../rtl/leds.sv
 read_verilog -sv ../../rtl/spi_slave.sv
 read_verilog -sv ../../rtl/receiver_i2s.sv
+read_verilog -sv ../../rtl/sample_reduce.sv
 
 set_param general.maxThreads 16
 

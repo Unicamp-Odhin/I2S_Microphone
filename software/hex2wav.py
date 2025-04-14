@@ -14,9 +14,11 @@ def hex_to_wav(input_file, output_file):
         hex_lines = f.readlines()
 
     audio_data = []
+    previous_line = '000000'
     for i in range(1, len(hex_lines), 1):
         line = hex_lines[i]
-        if not '000000' in line:
+        if not '000000' in line and line != previous_line:
+            previous_line = line
             line = line.strip()
             byte1 = int(line[:2], 24)
             byte2 = int(line[2:4], 24)

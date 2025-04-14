@@ -1,6 +1,5 @@
 module top (
     input  logic clk,
-    // input  logic CPU_RESETN,
 
     input  logic rx,
     output logic tx,
@@ -15,19 +14,6 @@ module top (
 
     input  logic rst,
 
-    // input  logic [15:0] SW,
-
-    // output logic [3:0] VGA_R,
-    // output logic [3:0] VGA_G,
-    // output logic [3:0] VGA_B,
-    // output logic VGA_HS,
-    // output logic VGA_VS,
-
-    // output logic M_CLK,      // Clock do microfone
-    // output logic M_LRSEL,    // Left/Right Select (Escolha do canal)
-
-    // input  logic M_DATA,     // Dados do microfone
-
     output logic i2s_clk,    // Clock do I2S
     output logic i2s_ws,     // Word Select do I2S
     input  logic i2s_sd      // Dados do I2S
@@ -39,10 +25,10 @@ logic data_in_valid, busy, data_out_valid, busy_posedge;
 logic [7:0] spi_send_data;
 
 logic [23:0] pcm_out;
+logic [23:0] reduce_out;
 logic pcm_ready;
 
 logic rst_n;
-// assign rst_n = 1'b1; // CPU_RESETN;
 assign rst_n = ~rst;
 
 // Clock do microfone
@@ -73,13 +59,20 @@ receiver_i2s #(
     .ready(pcm_ready)
 );
 
-// LEDS
-leds u_leds (
-    .clk(clk),
-    .data_in(pcm_out),
-    .led(LED)
-);
 
+
+logic done_reduce;
+sample_reduce #(
+    .DATA_SIZE(24),
+    .REDUCE_FACTOR(12)
+) u_sample_reduce (
+    .clk(i2s_clk),
+    .rst_n(rst_n),
+    .ready_i2s(pcm_ready),
+    .audio_data_in(pcm_out),
+    .done(done_reduce),
+    .audio_data_out(reduce_out)
+);
 
 SPI_Slave U1(
     .clk            (clk),
@@ -102,9 +95,8 @@ SPI_Slave U1(
 logic fifo_wr_en, fifo_rd_en, fifo_full, fifo_empty;
 logic [7:0] fifo_read_data, fifo_write_data;
 
-assign PMOD_LED[0] = ~fifo_full;
-assign PMOD_LED[1] = ~fifo_empty;
-
+assign LED[0] = fifo_full;
+assign LED[1] = fifo_empty;
 
 FIFO #(
     .DEPTH        (65536), // 64kB
@@ -139,12 +131,10 @@ always_ff @(posedge clk) begin
     if(!rst_n) begin
         write_fifo_state <= IDLE;
     end else begin
-        // unique case (write_fifo_state)
         case (write_fifo_state)
             IDLE: begin
-                if(pcm_ready && !fifo_full) begin
-                    fifo_write_data <= pcm_out[7:0];
-                    // fifo_write_data <= 8'hAA;
+                if(done_reduce_sync && !fifo_full) begin
+                    fifo_write_data <= reduce_out[7:0];
                     fifo_wr_en      <= 1'b1;
                     write_fifo_state <= WRITE_FIRST_BYTE;
                 end else begin
@@ -153,8 +143,7 @@ always_ff @(posedge clk) begin
             end 
             WRITE_FIRST_BYTE: begin
                 if(!fifo_full) begin
-                    fifo_write_data <= pcm_out[15:8];
-                    // fifo_write_data <= 8'hBB;
+                    fifo_write_data <= reduce_out[15:8];
                     fifo_wr_en      <= 1'b1;
                     write_fifo_state <= WRITE_SECOND_BYTE;
                 end else begin
@@ -163,8 +152,7 @@ always_ff @(posedge clk) begin
             end
             WRITE_SECOND_BYTE: begin
                 if(!fifo_full) begin
-                    fifo_write_data <= pcm_out[23:16];
-                    // fifo_write_data <= 8'hCC;
+                    fifo_write_data <= reduce_out[23:16];
                     fifo_wr_en      <= 1'b1;
                     write_fifo_state  <= WRITE_THIRD_BYTE;
                 end else begin
@@ -187,6 +175,18 @@ always_ff @(posedge clk) begin
     end
 end
 
+logic [2:0] done_sync;
+logic done_reduce_sync;
+// Sincronização do done, para garantir que so é salvo uma vez na FIFO
+always_ff @(posedge clk) begin
+    if(!rst_n) begin
+        done_sync <= 3'b000;
+    end else begin
+        done_sync <= {done_sync[1:0], done_reduce};
+    end
+end
+assign done_reduce_sync = ~done_sync[2] & done_sync[1];
+
 logic write_back_fifo;
 
 // Leitura do FIFO
@@ -200,7 +200,6 @@ always_ff @(posedge clk) begin
     end else begin
         if(busy_posedge) begin
             if(fifo_empty) begin
-                // spi_send_data <= 8'b0;
                 data_in_valid <= 1'b1;
             end else begin
                 fifo_rd_en <= 1'b1;

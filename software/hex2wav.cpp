@@ -24,7 +24,7 @@ int main() {
     const char *input_filename = "dump.hex";
     const char *output_filename = "dump.wav";
 
-    const uint32_t sample_rate = 48828 * 4;
+    const uint32_t sample_rate = 48848 / 12;
     const uint16_t num_channels = 1;      // Mono
     const uint16_t bits_per_sample = 32;  // 32 bits por amostra
     const uint16_t sample_width = bits_per_sample / 8;
