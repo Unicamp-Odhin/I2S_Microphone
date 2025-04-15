@@ -27,8 +27,8 @@ module receiver_i2s #(
                 bit_count <= bit_count + 1;
             end else if (bit_count == 31) begin
                 ready <= 1'b1;
-                bit_count <= 0;
                 i2s_ws_reg <= ~i2s_ws_reg;
+                bit_count <= bit_count + 1;
             end else if (bit_count == 63) begin
                 ready <= 1'b0;
                 bit_count <= 0;

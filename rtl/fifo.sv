@@ -48,7 +48,7 @@ always_ff @(posedge clk) begin
 end
 
 // FIFO cheia: ocorre quando o próximo `write_ptr` encontra `read_ptr`
-assign full_o = ((write_ptr + 3) == read_ptr) || 
+assign full_o = ((write_ptr + 1) == read_ptr) || 
                  ((write_ptr == (DEPTH - 3)) && (read_ptr == 0));
 
 // FIFO vazia: ocorre quando os ponteiros são iguais
