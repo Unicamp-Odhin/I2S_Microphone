@@ -25,12 +25,12 @@ module sample_reduce #(
                 if (counter == REDUCE_FACTOR - 1) begin
                     counter <= 0;
                     done <= 1;
-                    audio_data_out <= audio_data_in;
-                    // audio_data_out <= sum_data / REDUCE_FACTOR; // depois trocar por um shift
+                    // audio_data_out <= audio_data_in;
+                    audio_data_out <= sum_data / REDUCE_FACTOR; // depois trocar por um shift
                     sum_data <= 0;
                 end else begin
                     counter <= counter + 1;
-                    // sum_data <= sum_data + audio_data_in;
+                    sum_data <= sum_data + audio_data_in;
                     done <= 0;
                 end
             end

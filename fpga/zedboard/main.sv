@@ -64,7 +64,7 @@ receiver_i2s #(
 logic done_reduce;
 sample_reduce #(
     .DATA_SIZE(24),
-    .REDUCE_FACTOR(12)
+    .REDUCE_FACTOR(24)
 ) u_sample_reduce (
     .clk(i2s_clk),
     .rst_n(rst_n),
@@ -114,6 +114,25 @@ FIFO #(
     .read_data_o  (fifo_read_data)
 );
 
+logic [2:0] state_full;
+always_ff @(posedge clk) begin
+    state_full <= {state_full[1:0], fifo_full}; // anterior atual tmp
+end
+
+logic posedge_full;
+assign posedge_full = ~state_full[2] & state_full[1];
+
+logic [5:0] full_count;
+always_ff @(posedge clk) begin
+    if(!rst_n) begin
+        full_count <= 6'b000000;
+    end else if(posedge_full) begin
+        full_count <= full_count + 1;
+    end
+end
+
+assign LED[7:2] = full_count;
+
 typedef enum logic [1:0] { 
     IDLE,
     WRITE_FIRST_BYTE,
@@ -124,16 +143,20 @@ typedef enum logic [1:0] {
 write_fifo_state_t write_fifo_state;
 
 
+reg [23:0] freeze_byte;
+
 // Estado do FIFO
 always_ff @(posedge clk) begin
     fifo_wr_en <= 1'b0;
-
+    
     if(!rst_n) begin
         write_fifo_state <= IDLE;
+        freeze_byte <= 'b0;
     end else begin
         case (write_fifo_state)
             IDLE: begin
                 if(done_reduce_sync && !fifo_full) begin
+                    freeze_byte <= reduce_out;
                     fifo_write_data <= reduce_out[7:0];
                     fifo_wr_en      <= 1'b1;
                     write_fifo_state <= WRITE_FIRST_BYTE;
@@ -143,7 +166,7 @@ always_ff @(posedge clk) begin
             end 
             WRITE_FIRST_BYTE: begin
                 if(!fifo_full) begin
-                    fifo_write_data <= reduce_out[15:8];
+                    fifo_write_data <= freeze_byte[15:8];
                     fifo_wr_en      <= 1'b1;
                     write_fifo_state <= WRITE_SECOND_BYTE;
                 end else begin
@@ -152,7 +175,7 @@ always_ff @(posedge clk) begin
             end
             WRITE_SECOND_BYTE: begin
                 if(!fifo_full) begin
-                    fifo_write_data <= reduce_out[23:16];
+                    fifo_write_data <= freeze_byte[23:16];
                     fifo_wr_en      <= 1'b1;
                     write_fifo_state  <= WRITE_THIRD_BYTE;
                 end else begin

@@ -5,6 +5,7 @@
 *.hex
 *.wav
 *.bin
+*.out
 build/
 digilent_arty.cache/
 digilent_arty.hw/
