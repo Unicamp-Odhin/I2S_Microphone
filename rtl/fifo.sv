@@ -27,23 +27,23 @@ logic [PTR_WIDTH - 1:0] write_ptr;
 // Leitura
 always_ff @(posedge clk) begin
     if (!rst_n) begin
-        read_ptr    <= 'd0;
-        read_data_o <= 'd0;
+        read_ptr    <= '0;
+        read_data_o <= '0;
     end else if (rd_en_i && !empty_o) begin
         read_data_o <= memory[read_ptr];
         read_ptr    <= read_ptr + 1;
     end else if (rd_en_i && empty_o) begin // teste, para saber o que remover
-        read_data_o <= 'd0;
+        read_data_o <= '0;
     end
 end
 
 // Escrita
 always_ff @(posedge clk) begin
     if (!rst_n) begin
-        write_ptr <= 'd0;
+        write_ptr <= '0;
     end else if (wr_en_i && !full_o) begin
         memory[write_ptr] <= write_data_i;
-        write_ptr                        <= write_ptr + 1;
+        write_ptr <= write_ptr + 1;
     end 
 end
 
@@ -52,6 +52,7 @@ assign full_o = ((write_ptr + 1) == read_ptr) ||
                  ((write_ptr == (DEPTH - 3)) && (read_ptr == 0));
 
 // FIFO vazia: ocorre quando os ponteiros são iguais
-assign empty_o = (write_ptr == read_ptr);
+assign empty_o = (write_ptr == read_ptr) | |
+                 (write_ptr == read_ptr - 3); // Teste, para saber se ele manda um byte 00 e outros com valor
 
 endmodule

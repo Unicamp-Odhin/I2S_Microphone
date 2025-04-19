@@ -12,25 +12,20 @@ module sample_reduce #(
 );
 
     logic [31:0] counter;
-    logic [31:0] sum_data;
 
     always_ff @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
-            counter <= 0;
+            counter <= '0;
             done <= 0;
-            audio_data_out <= 0;
-            sum_data <= 0;
+            audio_data_out <= '0;
         end else begin
             if (ready_i2s) begin
                 if (counter == REDUCE_FACTOR - 1) begin
-                    counter <= 0;
+                    counter <= '0;
                     done <= 1;
-                    // audio_data_out <= audio_data_in;
-                    audio_data_out <= sum_data / REDUCE_FACTOR; // depois trocar por um shift
-                    sum_data <= 0;
+                    audio_data_out <= audio_data_in;
                 end else begin
                     counter <= counter + 1;
-                    sum_data <= sum_data + audio_data_in;
                     done <= 0;
                 end
             end
