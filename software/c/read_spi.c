@@ -6,11 +6,11 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <linux/spi/spidev.h>
+#include <time.h>
 
 #define DEVICE "/dev/spidev1.0"
 #define DELAY  9
-#define READ_SIZE 128 * 1024 // Número total de bytes a serem lidos (deve ser par)
-#define PAGE_SIZE 1024 * 3 	    // Tamanho máximo de leitura por operação
+
 /*
     Os dados quando PAGE_SIZE = 4096 estava gerando um rotação dos bytes em períodos de ~1364, que 4096 / 3
     Exemplo:
@@ -26,87 +26,105 @@
     o valor de 3MHz isso não acontece
 */
 
-// Variáveis globais
+// CONFIGURAÇÕES DO SISTEMA DE AQUISIÇÃO
+#define READ_SIZE     (3 * 1024 * 1024)  // Quantidade total de bytes a serem lidos
+#define PAGE_SIZE     (1024 * 3)    // Leitura por operação (múltiplo de 3)
+#define MEMORY_SIZE   (128 * 1024)   // Capacidade da memória da FPGA
+#define SAMPLE_RATE   6050          // Amostras por segundo
+#define SAMPLE_SIZE   3             // Tamanho de cada amostra em bytes (24 bits)
+
 static uint32_t SPEED = 3000000;
 static uint8_t BITS_PER_WORD = 8;
 static uint8_t MODE = 0;
 
-static void pabort(const char *s)
-{
+static void pabort(const char *s) {
     perror(s);
     abort();
 }
 
-static void read_and_save(int fd, const char *filename)
-{
+static void wait_for_buffer_fill() {
+    double seconds = (double)MEMORY_SIZE / (SAMPLE_RATE * SAMPLE_SIZE);
+    printf("Esperando %.2f segundos para encher o buffer...\n", seconds);
+    usleep((useconds_t)(seconds * 1e6));
+}
+
+static void read_and_save(int fd, const char *filename) {
     FILE *out = fopen(filename, "w");
     if (!out)
         pabort("Erro ao abrir arquivo para escrita");
 
-    size_t remaining = READ_SIZE;
-    size_t offset = 0;
-
-    // save all data in a buffer
-    uint8_t *buffer = malloc(READ_SIZE);
+    size_t total_remaining = READ_SIZE;
+    uint8_t *buffer = malloc(MEMORY_SIZE);
     if (!buffer)
         pabort("Erro de alocação");
-    memset(buffer, 0, READ_SIZE);
-    // read data from SPI
-    while (remaining > 0) {
-        size_t chunk_size = remaining > PAGE_SIZE ? PAGE_SIZE : remaining;
+    memset(buffer, 0, MEMORY_SIZE);
 
-        // Garantir que chunk_size seja par para formar os pares de 2 bytes
-        if (chunk_size % 2 != 0)
-            chunk_size--;
+    while (total_remaining > 0) {
+        wait_for_buffer_fill();
 
-        struct spi_ioc_transfer tr = {
-            .tx_buf = 0,
-            .rx_buf = (unsigned long)(buffer + offset),
-            .len = chunk_size,
-            .delay_usecs = DELAY,
-            .speed_hz = SPEED,
-            .bits_per_word = BITS_PER_WORD,
-        };
+        size_t read_now = total_remaining > MEMORY_SIZE ? MEMORY_SIZE : total_remaining;
+        size_t offset = 0;
+        size_t remaining = read_now;
 
-        int ret = ioctl(fd, SPI_IOC_MESSAGE(1), &tr);
-        if (ret < 1)
-            pabort("Erro ao enviar mensagem SPI");
+        // Leitura do SPI
+        while (remaining > 0) {
+            size_t chunk_size = remaining > PAGE_SIZE ? PAGE_SIZE : remaining;
 
-        offset += chunk_size;
-        remaining -= chunk_size;
-    }
-    // write data to file
-    offset = 0;
-    remaining = READ_SIZE;
-    while (remaining > 0) {
-        size_t chunk_size = remaining > PAGE_SIZE ? PAGE_SIZE : remaining;
+            if (chunk_size % 2 != 0)
+                chunk_size--;
 
-        // Garantir que chunk_size seja par para formar os pares de 2 bytes
-        if (chunk_size % 2 != 0)
-            chunk_size--;
+            struct spi_ioc_transfer tr = {
+                .tx_buf = 0,
+                .rx_buf = (unsigned long)(buffer + offset),
+                .len = chunk_size,
+                .delay_usecs = DELAY,
+                .speed_hz = SPEED,
+                .bits_per_word = BITS_PER_WORD,
+            };
 
-        // Salvar pares como 24 bits em hexadecimal
-        for (size_t i = 0; i + 1 < chunk_size; i += 3) {
-            uint32_t sample = (buffer[offset + i] | (buffer[offset + i + 1] << 8) | buffer[offset + i + 2] << 16) & 0x00FFFFFF;
-            fprintf(out, "%06X\n", sample);
+            int ret = ioctl(fd, SPI_IOC_MESSAGE(1), &tr);
+            if (ret < 1)
+                pabort("Erro ao enviar mensagem SPI");
+
+            offset += chunk_size;
+            remaining -= chunk_size;
         }
 
-        offset += chunk_size;
-        remaining -= chunk_size;
+        // Escrita no arquivo
+        offset = 0;
+        remaining = read_now;
+
+        while (remaining > 0) {
+            size_t chunk_size = remaining > PAGE_SIZE ? PAGE_SIZE : remaining;
+
+            if (chunk_size % 2 != 0)
+                chunk_size--;
+
+            for (size_t i = 0; i + 2 < chunk_size; i += 3) {
+                uint32_t sample = (buffer[offset + i] |
+                                  (buffer[offset + i + 1] << 8) |
+                                  (buffer[offset + i + 2] << 16)) & 0x00FFFFFF;
+                fprintf(out, "%06X\n", sample);
+            }
+
+            offset += chunk_size;
+            remaining -= chunk_size;
+        }
+
+        total_remaining -= read_now;
     }
+
     free(buffer);
     fclose(out);
 }
 
-int main(void)
-{
+int main(void) {
     int fd, ret;
 
     fd = open(DEVICE, O_RDWR);
     if (fd < 0)
         pabort("Não foi possível abrir o dispositivo SPI");
 
-    // Configurações do modo SPI
     ret = ioctl(fd, SPI_IOC_WR_MODE, &MODE);
     if (ret == -1)
         pabort("Não foi possível definir o modo SPI");
@@ -123,10 +141,12 @@ int main(void)
     printf("Modo SPI: %d\n", MODE);
     printf("Bits por palavra: %d\n", BITS_PER_WORD);
     printf("Velocidade máxima: %d Hz\n", SPEED);
+    printf("Tamanho total a ler: %d KB\n", READ_SIZE / 1024);
+    printf("Buffer de aquisição: %d KB\n", MEMORY_SIZE / 1024);
+    printf("Amostras por segundo: %d, tamanho da amostra: %d bytes\n\n", SAMPLE_RATE, SAMPLE_SIZE);
 
     read_and_save(fd, "dump.hex");
 
     close(fd);
     return 0;
 }
-
