@@ -41,6 +41,7 @@ always_ff @(posedge clk) begin
 end
 
 logic [23:0] pcm_out;
+// assign pcm_out = 24'hAC0F1B;
 
 // Instanciação do módulo
 receiver_i2s #(
@@ -50,19 +51,18 @@ receiver_i2s #(
     .rst_n(rst_n),
     .i2s_ws(i2s_ws),
     .i2s_sd(i2s_sd),
-    // .audio_data(pcm_out), 
-    .audio_data(), 
+    .audio_data(pcm_out), 
     .ready(pcm_ready) // A cada 24_414Hz
 );
 
 
 logic [23:0] reduce_out;
-assign pcm_out = 24'hFF66AA;
+
 
 logic done_reduce;
 sample_reduce #(
     .DATA_SIZE(24),
-    .REDUCE_FACTOR(8) // 24_414Hz / REDUCE_FACTOR gera a nova taxa de amostragem
+    .REDUCE_FACTOR(2) // 24_414Hz / REDUCE_FACTOR gera a nova taxa de amostragem
 ) u_sample_reduce (
     .clk(i2s_clk),
     .rst_n(rst_n),
@@ -100,12 +100,12 @@ assign LED[1] = fifo_empty;
 //
 // 1. Determine o tamanho de cada amostra em bytes (nesse caso: 3 bytes por amostra).
 // 2. Calcule a taxa efetiva de amostragem 
-//                                         (nesse caso: 24.414 Hz / REDUCE_FACTOR ≈ 4 kHz).
+//                                         (nesse caso: 24.414 Hz / REDUCE_FACTOR ≈ 6 kHz).
 // 3. Multiplique o tamanho da amostra pela taxa de amostragem para obter a taxa de dados 
-//                                         (nesse caso: 3 bytes * 2KHz = 12 kB/s).
+//                                         (nesse caso: 3 bytes * 6KHz = 18 kB/s).
 // 4. Divida a capacidade total da FIFO (em bytes) pela taxa de dados para obter o tempo até encher:
 //                                          tempo ≈ capacidade_da_FIFO / taxa_de_dados
-//                                          nesse caso: 128 kB / 12 kB/s ≈ 10 segundos
+//                                          nesse caso: 128 kB / 18 kB/s ≈ 7 segundos
 
 FIFO #(
     .DEPTH        (128 * 1024), // 128kb
