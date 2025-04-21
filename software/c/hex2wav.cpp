@@ -189,7 +189,6 @@ int main() {
     while (fgets(line, sizeof(line), input_file)) {
         if (strstr(line, "000000") == NULL) {
             line[strcspn(line, "\n")] = '\0';
-            
             if (counter % FREQUENCY_SINC == 0){    
                 type = type_line(line);
                 while (type == -1){
@@ -201,7 +200,10 @@ int main() {
                 }
             } 
             else {
-                sample = decoder(line, type);  
+                // remover os valores gerados pelo deslocamento de 5 bits
+                sample = decoder(line, type);
+                if (sample > 0x7ffffff)
+                    sample = 0;
                 fwrite(&sample, sample_width, 1, output_file);
             }
         }
