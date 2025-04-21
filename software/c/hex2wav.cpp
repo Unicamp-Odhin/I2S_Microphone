@@ -97,30 +97,23 @@ uint32_t decoder(char* line, int type) {
     uint32_t byte1 = (strtol(line, NULL, 16) >> 16) & 0xFF;
     uint32_t byte2 = (strtol(line, NULL, 16) >> 8) & 0xFF;
     uint32_t byte3 = (strtol(line, NULL, 16)) & 0xFF;
-    uint32_t sample;
+    uint32_t sample = 0;
 
     switch (type) {
         case 0: // 00AAFF 
-            sample = (byte2 << 16) | (byte3 << 8) | byte1;
-            break;
+            return sample = ((byte2 << 16) | (byte3 << 8) | byte1) << 5;
         case 1: // 00FFAA
-            sample = (byte3 << 16) | (byte2 << 3) | byte1;
-            break;
+            return sample = ((byte3 << 16) | (byte2 << 3) | byte1) << 5;
         case 2: // AA00FF
-            sample = (byte1 << 16) | (byte3 << 8) | byte2;
-            break;
+            return sample = ((byte1 << 16) | (byte3 << 8) | byte2) << 5;
         case 3: // AAFF00
-            sample = (byte1 << 16) | (byte2 << 8) | byte3;
-            break;
+            return sample = ((byte1 << 16) | (byte2 << 8) | byte3) << 5;
         case 4: // FF00AA
-            sample = (byte2 << 16) | (byte3 << 8) | byte1;
-            break;
+            return sample = ((byte2 << 16) | (byte3 << 8) | byte1) << 5;
         case 5: // FFAA00
-            sample = (byte2 << 16) | (byte1 << 8) | byte3;
-            break;
+            return sample = ((byte2 << 16) | (byte1 << 8) | byte3) << 5;
         default:
-            sample = (byte2 << 16) | (byte3 << 8) | byte1; // Default case
-            break;
+            return sample = ((byte2 << 16) | (byte3 << 8) | byte1) << 5; // Default case
     }
 
     return sample;
@@ -192,11 +185,11 @@ int main() {
 
 
     int counter = 1;
+    uint32_t sample;
     while (fgets(line, sizeof(line), input_file)) {
         if (strstr(line, "000000") == NULL) {
             line[strcspn(line, "\n")] = '\0';
             
-            int tmp = counter;
             if (counter % FREQUENCY_SINC == 0){    
                 type = type_line(line);
                 while (type == -1){
@@ -206,8 +199,9 @@ int main() {
                     counter = 0;
                     printf("deu merda\n");
                 }
-            } else {
-                uint32_t sample = decoder(line, type);  
+            } 
+            else {
+                sample = decoder(line, type);  
                 fwrite(&sample, sample_width, 1, output_file);
             }
         }
