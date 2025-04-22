@@ -1,14 +1,14 @@
-module leds(
-    input  logic clk,         // board clock 25MHz 
+module leds (
+    input  logic        clk,      // board clock 25MHz 
     input  logic [23:0] data_in,
-    output logic [7:0] led
+    output logic [ 7:0] led
 );
 
     logic [31:0] counter2;
-    logic clk2;
+    logic        clk2;
     logic [15:0] temp_led;
-    logic [7:0] compact_led;
-    
+    logic [ 7:0] compact_led;
+
     // assign temp_led = (data_in[15] == 1'b1) ? (data_in + 16'h8000) : ((data_in + 16'h7FFF) & 16'h7FFF);
 
     // assign compact_led[7] = temp_led[15] | temp_led[14];
@@ -23,7 +23,7 @@ module leds(
     always_ff @(posedge clk) begin
         if (counter2 == 32'd12000000) begin
             counter2 <= 32'b0;
-            clk2 <= ~clk2;
+            clk2     <= ~clk2;
         end else begin
             counter2 <= counter2 + 32'b1;
         end
@@ -43,6 +43,6 @@ module leds(
     //     endcase
     // end
 
-    assign led = data_in[23:15]; // Teste de LEDS
+    assign led = data_in[23:15];  // Teste de LEDS
 
 endmodule
