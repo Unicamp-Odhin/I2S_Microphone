@@ -11,6 +11,9 @@
 #define DEVICE "/dev/spidev1.0"
 #define DELAY  9
 
+//TODO: Para facilitar e tornar mais preciso a leitura dos dados, o código deveria ser capaz de resetar o buffer da fpga
+//      e ler os dados em um intervalo de tempo
+
 /*
     Os dados quando PAGE_SIZE = 4096 estava gerando um rotação dos bytes em períodos de ~1364, que 4096 / 3
     Exemplo:

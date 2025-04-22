@@ -82,6 +82,11 @@ int find_init_sinc(FILE *input_file){
 
 // Função para pré-processar a linha e decidir o tipo
 int type_line(char* line) {
+    //       A lógica do código tenta apenas encontrar como os dados estão rotacionados
+
+    // TODO: Permitir que seja identificado a palavra de sincronização está deslocada e como esta
+    //       deslocada, para isso, o código deve ser capaz de identificar a palavra de sincronização
+    //       deslocada e a partir disso, identificar o tipo de conversão
     int type = -1;
     for (int i = 0; i < NUM_RULES; i++) {
         if (strcmp(line, rules[i].pattern1) == 0 || strcmp(line, rules[i].pattern2) == 0) {
@@ -125,7 +130,7 @@ int main() {
 
     const uint32_t sample_rate = 24414 / (4);
     const uint16_t num_channels = 1;      // Mono
-    const uint16_t bits_per_sample = 24;  // 32 bits por amostra
+    const uint16_t bits_per_sample = 24;  // 24 bits por amostra
     const uint16_t sample_width = bits_per_sample / 8;
 
     FILE *input_file = fopen(input_filename, "r");
@@ -191,6 +196,9 @@ int main() {
             line[strcspn(line, "\n")] = '\0';
             if (counter % FREQUENCY_SINC == 0){    
                 type = type_line(line);
+
+                // Essa busca pela palavra de sincronização gera um perda de amostras
+                // Pensar em uma forma de evitar isso
                 while (type == -1){
                     fgets(line, sizeof(line), input_file);
                     line[strcspn(line, "\n")] = '\0';
@@ -200,8 +208,8 @@ int main() {
                 }
             } 
             else {
-                // remover os valores gerados pelo deslocamento de 5 bits
                 sample = decoder(line, type);
+                // remover os valores gerados pelo deslocamento de 5 bits
                 if (sample > 0x7ffffff)
                     sample = 0;
                 fwrite(&sample, sample_width, 1, output_file);
