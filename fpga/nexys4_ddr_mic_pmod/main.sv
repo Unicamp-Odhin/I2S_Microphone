@@ -151,8 +151,37 @@ typedef enum logic [1:0] {
 
 write_fifo_state_t write_fifo_state;
 
+logic done_reduce_sync;
+logic [23:0] freeze_byte;
+logic [2:0] done_sync;
 
-reg [23:0] freeze_byte;
+
+// Sincronização do done, para garantir que so é salvo uma vez na FIFO
+
+parameter FREQUENCY_SINC = 127;
+logic [$clog2(FREQUENCY_SINC):0] counter_write_fifo;
+always_ff @(posedge clk) begin
+    if(!rst_n) begin
+        counter_write_fifo <= 8'b0;
+        done_sync <= 3'b000;
+    end else begin
+        if (counter_write_fifo == FREQUENCY_SINC - 1) begin
+            done_sync <= {done_sync[1:0], done_reduce};
+            counter_write_fifo <= 8'b0;
+        end else begin
+            done_sync <= {done_sync[1:0], done_reduce};
+            counter_write_fifo <= counter_write_fifo + 1;
+        end
+    end
+end
+
+
+logic [23:0] write_fifo;
+
+// Para garantir um byte periódico para sincronização do spi
+assign write_fifo = ~|(counter_write_fifo % (FREQUENCY_SINC - 1)) ? 24'hAAFF00 : reduce_out;
+
+assign done_reduce_sync = ~done_sync[2] & done_sync[1];
 
 // Estado do FIFO
 always_ff @(posedge clk) begin
@@ -165,8 +194,8 @@ always_ff @(posedge clk) begin
         case (write_fifo_state)
             IDLE: begin
                 if(done_reduce_sync && !fifo_full) begin
-                    freeze_byte <= reduce_out;
-                    fifo_write_data <= reduce_out[7:0];
+                    freeze_byte <= write_fifo;
+                    fifo_write_data <= write_fifo[7:0];
                     fifo_wr_en      <= 1'b1;
                     write_fifo_state <= WRITE_FIRST_BYTE;
                 end else begin
@@ -198,19 +227,6 @@ always_ff @(posedge clk) begin
         endcase
     end
 end
-
-logic [2:0] done_sync;
-// Sincronização do done, para garantir que so é salvo uma vez na FIFO
-always_ff @(posedge clk) begin
-    if(!rst_n) begin
-        done_sync <= 3'b000;
-    end else begin
-        done_sync <= {done_sync[1:0], done_reduce};
-    end
-end
-
-logic done_reduce_sync;
-assign done_reduce_sync = ~done_sync[2] & done_sync[1];
 
 logic write_back_fifo;
 

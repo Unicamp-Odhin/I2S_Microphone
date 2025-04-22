@@ -52,7 +52,5 @@ assign full_o = ((write_ptr + 1) == read_ptr) ||
                  ((write_ptr == (DEPTH - 3)) && (read_ptr == 0));
 
 // FIFO vazia: ocorre quando os ponteiros são iguais
-assign empty_o = (write_ptr == read_ptr) | |
-                 (write_ptr == read_ptr - 3); // Teste, para saber se ele manda um byte 00 e outros com valor
-
+assign empty_o = (write_ptr == read_ptr);
 endmodule
