@@ -32,7 +32,8 @@ The main goal is to capture real-time audio data using an FPGA, process it, and 
 ├── rtl                          # RTL modules in SystemVerilog
 │   ├── fifo.sv
 │   ├── leds.sv
-│   ├── receiver_i2s.sv
+│   ├── i2s_capture.sv
+│   ├── i2s_fpga.sv
 │   ├── sample_reduce.sv
 │   └── spi_slave.sv
 ├── software                     # Software layer for data extraction and conversion
