@@ -46,7 +46,7 @@ module top (
     // assign pcm_out = 24'hAC0F1B;
 
     // Instanciação do módulo
-    receiver_i2s #(
+    i2s_capture #(
         .DATA_SIZE(24)
     ) u_i2s_receiver (
         .clk       (i2s_clk),
