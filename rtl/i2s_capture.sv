@@ -1,4 +1,4 @@
-module receiver_i2s #(
+module i2s_capture #(
     parameter int DATA_SIZE = 24
 ) (
     input  logic                 clk,         // 1.5MHz
