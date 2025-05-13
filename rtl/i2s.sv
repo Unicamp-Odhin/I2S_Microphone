@@ -12,7 +12,7 @@ module I2S #(
     output logic i2s_ws,
     input  logic i2s_sd,
 
-    output logic [I2S_DATA_SIZE - 1:0] pcm_out,
+    output logic [DATA_OUT_SIZE - 1:0] pcm_out,
     output logic pcm_ready
 );
 
@@ -64,15 +64,15 @@ module I2S #(
         .audio_data_out (reduce_out)
     );
 
-    assign pcm_ready = done_reduce;
-    assign pcm_out   = reduce_out;
+//    assign pcm_ready = done_reduce;
+//    assign pcm_out   = reduce_out;
 
     localparam DIFF = I2S_DATA_SIZE - DATA_OUT_SIZE;
     localparam ROUND_VALUE = 2 ^ (DIFF - 1);
 
-/*
+
     logic sum_ready;
-    logic [DATA_SIZE - 1: 0] sum_data;
+    logic [I2S_DATA_SIZE - 1: 0] sum_data;
 
     always_ff @(posedge clk or negedge rst_n) begin
         if(!rst_n) begin
@@ -88,6 +88,6 @@ module I2S #(
             pcm_out   <= sum_data >>> DIFF;
         end
     end
-*/
+
     
 endmodule
