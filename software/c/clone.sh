@@ -5,7 +5,7 @@ if ! command -v sshpass &> /dev/null; then
     exit 1
 fi
 
-sshpass -p "starfive" scp user@192.168.15.117:/home/user/development/read_mic/dump.hex .
+sshpass -p "starfive" scp user@192.168.15.137:/home/user/development/read_mic/dump.hex .
 
 g++ hex2wav.cpp -o hex2wav
 if [ $? -ne 0 ]; then

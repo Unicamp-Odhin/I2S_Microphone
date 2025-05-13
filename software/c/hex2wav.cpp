@@ -20,14 +20,24 @@ typedef struct {
     uint32_t data_size;     // Tamanho dos dados de amostra
 } WavHeader;
 
-int main() {
+int main(int argc, char *argv[]) {
+    if (argc != 5 || strcmp(argv[1], "--bytes_sample") != 0 || 
+    (strcmp(argv[2], "2") != 0 && strcmp(argv[2], "3") != 0) ||
+    strcmp(argv[3], "--sample_rate") != 0) {
+        fprintf(stderr, "Uso: %s --bytes_sample [2|3] --sample_rate <valor>\n", argv[0]);
+        return 1;
+    }
+
+    const uint16_t bytes_per_sample = atoi(argv[2]);
+    const uint32_t sample_rate = atoi(argv[4]);
+
+    const uint16_t num_channels = 1;                    // Mono
+    const uint16_t bits_per_sample = 8 * bytes_per_sample; 
+
+
     const char *input_filename = "dump.hex";
     const char *output_filename = "dump.wav";
 
-    const uint32_t sample_rate = 24414 /(4);
-    const uint16_t num_channels = 1;      // Mono
-    const uint16_t bits_per_sample = 24;  // 32 bits por amostra
-    const uint16_t sample_width = bits_per_sample / 8;
 
     FILE *input_file = fopen(input_filename, "r");
     if (!input_file) {
@@ -45,7 +55,7 @@ int main() {
     }
     rewind(input_file);
 
-    uint32_t data_size = num_samples * num_channels * sample_width;
+    uint32_t data_size = num_samples * num_channels * bytes_per_sample;
 
     // Criar cabeçalho WAV
     WavHeader header;
@@ -57,8 +67,8 @@ int main() {
     header.audio_format = 1; // PCM
     header.num_channels = num_channels;
     header.sample_rate = sample_rate;
-    header.byte_rate = sample_rate * num_channels * sample_width;
-    header.block_align = num_channels * sample_width;
+    header.byte_rate = sample_rate * num_channels * bytes_per_sample;
+    header.block_align = num_channels * bytes_per_sample;
     header.bits_per_sample = bits_per_sample;
     memcpy(header.data, "data", 4);
     header.data_size = data_size;
@@ -90,7 +100,7 @@ int main() {
                 sincronização. Então pode ser uma permutação desses 3 bytes
             */
 
-            fwrite(&sample, sample_width, 1, output_file);
+            fwrite(&sample, bytes_per_sample, 1, output_file);
         }
     }
 
