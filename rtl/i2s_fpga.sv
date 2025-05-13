@@ -1,11 +1,11 @@
 module i2s_fpga #(
-    parameter int DATA_SIZE = 24,
-    parameter int REDUCE_FACTOR = 2,
-    parameter int FIFO_DEPTH = 128 * 1024, // 128kB
-    parameter int FIFO_WIDTH = 8,
-    parameter int CLK_FREQ = 100_000_000,  // Frequência do clock do sistema
+    parameter int DATA_SIZE       = 24,
+    parameter int REDUCE_FACTOR   = 2,
+    parameter int FIFO_DEPTH      = 128 * 1024, // 128kB
+    parameter int FIFO_WIDTH      = 8,
+    parameter int CLK_FREQ        = 100_000_000,  // Frequência do clock do sistema
     parameter int SIZE_FULL_COUNT = 6,
-    parameter int I2S_CLK_FREQ = 1_500_000
+    parameter int I2S_CLK_FREQ    = 1_500_000
 ) (
     input  logic clk,
     input  logic rst_n,
@@ -29,52 +29,25 @@ module i2s_fpga #(
 
     logic [7:0] spi_send_data;
 
-    logic       pcm_ready;
-
-    // Geração de clock I2S de aproximadamente 1,5 MHz a partir de CLK_FREQ (ex: 100 MHz)
-    // Justificativa: Para gerar 1,5 MHz, precisamos de um clock que oscile (toggle) a cada (CLK_FREQ / (2 * 1_500_000)) ciclos
-    // pois cada ciclo completo de clock exige dois toggles (subida e descida)
-
-    localparam integer TARGET_FREQ  = I2S_CLK_FREQ;
-    localparam integer CLK_DIV      = CLK_FREQ / (2 * TARGET_FREQ); // Divisor para obter 1,5 MHz
-    localparam integer COUNTER_SIZE = $clog2(CLK_DIV);         // Tamanho necessário para representar o divisor
-
-    logic [COUNTER_SIZE-1:0] counter = 0;
-    logic i2s_clk_reg = 0;
-    assign i2s_clk = i2s_clk_reg;
-
-    always_ff @(posedge clk) begin
-        if (!rst_n) begin
-            counter <= 0;
-            i2s_clk_reg <= 0;
-        end else begin
-            if (counter == CLK_DIV - 1) begin
-                counter <= 0;
-                i2s_clk_reg <= ~i2s_clk_reg;
-            end else begin
-                counter <= counter + 1;
-            end
-        end
-    end
-
-
+    logic        pcm_ready;
     logic [23:0] pcm_out;
 
     // Instanciação do módulo
     i2s_capture #(
-        .DATA_SIZE (DATA_SIZE)
+        .DATA_SIZE    (DATA_SIZE),
+        .CLK_FREQ     (CLK_FREQ),
+        .I2S_CLK_FREQ (I2S_CLK_FREQ)
     ) u_i2s_receiver (
-        .clk        (i2s_clk),
+        .clk        (clk),
         .rst_n      (rst_n),
+        
+        .i2s_clk    (i2s_clk),
         .i2s_ws     (i2s_ws),
         .i2s_sd     (i2s_sd),
+        
         .audio_data (pcm_out),
         .ready      (pcm_ready)  // A cada 24_414Hz
     );
-
-
-    logic [23:0] reduce_out;
-
 
     // Para estimar o tempo necessário até a memória FIFO encher completamente:
     //
@@ -88,14 +61,18 @@ module i2s_fpga #(
     //                                          nesse caso: 64 kB / 24 kB/s ≈ 2.66 segundos
 
     logic        done_reduce;
+    logic [23:0] reduce_out;
+
     sample_reduce #(
         .DATA_SIZE      (DATA_SIZE),
         .REDUCE_FACTOR  (REDUCE_FACTOR)  // 24_414Hz / REDUCE_FACTOR gera a nova taxa de amostragem
     ) u_sample_reduce (
-        .clk            (i2s_clk),
+        .clk            (clk),
         .rst_n          (rst_n),
+
         .ready_i2s      (pcm_ready),
         .audio_data_in  (pcm_out),
+
         .done           (done_reduce),
         .audio_data_out (reduce_out)
     );
@@ -211,8 +188,8 @@ module i2s_fpga #(
             case (write_fifo_state)
                 IDLE: begin
                     if (done_reduce_sync && !fifo_full) begin
-                        freeze_byte      <= write_fifo;
-                        fifo_write_data  <= write_fifo[7:0];
+                        freeze_byte      <= reduce_out;
+                        fifo_write_data  <= reduce_out[7:0];
                         fifo_wr_en       <= 1'b1;
                         write_fifo_state <= WRITE_FIRST_BYTE;
                     end else begin

@@ -28,6 +28,7 @@ module top (
     ) u_i2s_fpga (
         .clk       (clk),
         .rst_n     (CPU_RESETN),
+        
         .mosi      (mosi),
         .miso      (miso),
         .cs        (cs),

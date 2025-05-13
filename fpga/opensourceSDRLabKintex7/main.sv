@@ -21,10 +21,11 @@ module top (
         .FIFO_WIDTH      (8),
         .DATA_SIZE       (24),
         .REDUCE_FACTOR   (2),
-        .SIZE_FULL_COUNT (14)
+        .SIZE_FULL_COUNT (6)
     ) u_i2s_fpga (
         .clk        (clk),
         .rst_n      (rst_n),
+        
         .mosi       (mosi),
         .miso       (miso),
         .cs         (cs),
