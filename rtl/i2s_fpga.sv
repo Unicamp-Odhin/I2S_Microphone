@@ -4,18 +4,20 @@ module i2s_fpga #(
     parameter int FIFO_DEPTH = 128 * 1024, // 128kB
     parameter int FIFO_WIDTH = 8,
     parameter int CLK_FREQ = 100_000_000,  // Frequência do clock do sistema
-    parameter int SIZE_FULL_COUNT = 6
+    parameter int SIZE_FULL_COUNT = 6,
+    parameter int I2S_CLK_FREQ = 1_500_000
 ) (
-    input logic clk,
-    input logic rst,
-    input logic mosi,
+    input  logic clk,
+    input  logic rst_n,
+
+    input  logic mosi,
     output logic miso,
-    input logic cs,
-    input logic sck,
+    input  logic cs,
+    input  logic sck,
 
     output logic i2s_clk,
     output logic i2s_ws,
-    input logic i2s_sd,
+    input  logic i2s_sd,
 
     output logic [SIZE_FULL_COUNT-1:0] full_count,
     output logic fifo_empty,
@@ -29,16 +31,13 @@ module i2s_fpga #(
 
     logic       pcm_ready;
 
-    logic       rst_n;
-    assign rst_n = ~rst;
-
     // Geração de clock I2S de aproximadamente 1,5 MHz a partir de CLK_FREQ (ex: 100 MHz)
     // Justificativa: Para gerar 1,5 MHz, precisamos de um clock que oscile (toggle) a cada (CLK_FREQ / (2 * 1_500_000)) ciclos
     // pois cada ciclo completo de clock exige dois toggles (subida e descida)
 
-    parameter real TARGET_FREQ = 1_500_000;
-    parameter integer CLK_DIV = CLK_FREQ / (2 * TARGET_FREQ); // Divisor para obter 1,5 MHz
-    parameter integer COUNTER_SIZE = $clog2(CLK_DIV);         // Tamanho necessário para representar o divisor
+    localparam integer TARGET_FREQ  = I2S_CLK_FREQ;
+    localparam integer CLK_DIV      = CLK_FREQ / (2 * TARGET_FREQ); // Divisor para obter 1,5 MHz
+    localparam integer COUNTER_SIZE = $clog2(CLK_DIV);         // Tamanho necessário para representar o divisor
 
     logic [COUNTER_SIZE-1:0] counter = 0;
     logic i2s_clk_reg = 0;
@@ -63,14 +62,14 @@ module i2s_fpga #(
 
     // Instanciação do módulo
     i2s_capture #(
-        .DATA_SIZE(DATA_SIZE)
+        .DATA_SIZE (DATA_SIZE)
     ) u_i2s_receiver (
-        .clk       (i2s_clk),
-        .rst_n     (rst_n),
-        .i2s_ws    (i2s_ws),
-        .i2s_sd    (i2s_sd),
-        .audio_data(pcm_out),
-        .ready     (pcm_ready)  // A cada 24_414Hz
+        .clk        (i2s_clk),
+        .rst_n      (rst_n),
+        .i2s_ws     (i2s_ws),
+        .i2s_sd     (i2s_sd),
+        .audio_data (pcm_out),
+        .ready      (pcm_ready)  // A cada 24_414Hz
     );
 
 
@@ -90,32 +89,32 @@ module i2s_fpga #(
 
     logic        done_reduce;
     sample_reduce #(
-        .DATA_SIZE(DATA_SIZE),
-        .REDUCE_FACTOR(REDUCE_FACTOR)  // 24_414Hz / REDUCE_FACTOR gera a nova taxa de amostragem
+        .DATA_SIZE      (DATA_SIZE),
+        .REDUCE_FACTOR  (REDUCE_FACTOR)  // 24_414Hz / REDUCE_FACTOR gera a nova taxa de amostragem
     ) u_sample_reduce (
-        .clk           (i2s_clk),
-        .rst_n         (rst_n),
-        .ready_i2s     (pcm_ready),
-        .audio_data_in (pcm_out),
-        .done          (done_reduce),
-        .audio_data_out(reduce_out)
+        .clk            (i2s_clk),
+        .rst_n          (rst_n),
+        .ready_i2s      (pcm_ready),
+        .audio_data_in  (pcm_out),
+        .done           (done_reduce),
+        .audio_data_out (reduce_out)
     );
 
     SPI_Slave U1 (
-        .clk  (clk),
-        .rst_n(rst_n),
+        .clk            (clk),
+        .rst_n          (rst_n),
 
-        .sck (sck),
-        .cs  (cs),
-        .mosi(mosi),
-        .miso(miso),
+        .sck            (sck),
+        .cs             (cs),
+        .mosi           (mosi),
+        .miso           (miso),
 
-        .data_in_valid (data_in_valid),
-        .data_out_valid(data_out_valid),
-        .busy          (busy),
+        .data_in_valid  (data_in_valid),
+        .data_out_valid (data_out_valid),
+        .busy           (busy),
 
-        .data_in (spi_send_data),
-        .data_out()
+        .data_in        (spi_send_data),
+        .data_out       ()
     );
 
 
@@ -123,19 +122,19 @@ module i2s_fpga #(
     logic [7:0] fifo_read_data, fifo_write_data;
 
     FIFO #(
-        .DEPTH(FIFO_DEPTH),  // 128kb
-        .WIDTH(FIFO_WIDTH)
+        .DEPTH (FIFO_DEPTH),  // 128kb
+        .WIDTH (FIFO_WIDTH)
     ) tx_fifo (
-        .clk  (clk),
-        .rst_n(rst_n),
+        .clk          (clk),
+        .rst_n        (rst_n),
 
-        .wr_en_i(fifo_wr_en),
-        .rd_en_i(fifo_rd_en),
+        .wr_en_i      (fifo_wr_en),
+        .rd_en_i      (fifo_rd_en),
 
-        .write_data_i(fifo_write_data),
-        .full_o      (fifo_full),
-        .empty_o     (fifo_empty),
-        .read_data_o (fifo_read_data)
+        .write_data_i (fifo_write_data),
+        .full_o       (fifo_full),
+        .empty_o      (fifo_empty),
+        .read_data_o  (fifo_read_data)
     );
 
     logic [2:0] state_full;
@@ -154,7 +153,6 @@ module i2s_fpga #(
         end
     end
 
-    write_fifo_state_t        write_fifo_state;
 
     logic                     done_reduce_sync;
     logic              [ 2:0] done_sync;
@@ -166,7 +164,7 @@ module i2s_fpga #(
 
     // Sincronização do done, para garantir que so é salvo uma vez na FIFO
     // e o controle da frequencia de escrita da palavra de sincronização na FIFO
-    parameter FREQUENCY_SINC = 127;
+    localparam FREQUENCY_SINC = 127;
     logic [$clog2(FREQUENCY_SINC):0] counter_write_fifo;
     always_ff @(posedge clk) begin
         if (!rst_n) begin
@@ -199,6 +197,8 @@ module i2s_fpga #(
         WRITE_THIRD_BYTE
     } write_fifo_state_t;
 
+    write_fifo_state_t        write_fifo_state;
+
     // Estado do FIFO, pode guardar os 3 bytes, mas por questão de economia de espaço
     // irei ignorar o byte menos significativo
     always_ff @(posedge clk) begin
@@ -212,7 +212,7 @@ module i2s_fpga #(
                 IDLE: begin
                     if (done_reduce_sync && !fifo_full) begin
                         freeze_byte      <= write_fifo;
-                        fifo_write_data  <= write_fifo[15:8];
+                        fifo_write_data  <= write_fifo[7:0];
                         fifo_wr_en       <= 1'b1;
                         write_fifo_state <= WRITE_FIRST_BYTE;
                     end else begin
@@ -220,6 +220,15 @@ module i2s_fpga #(
                     end
                 end
                 WRITE_FIRST_BYTE: begin
+                    if (!fifo_full) begin
+                        fifo_write_data  <= freeze_byte[15:8];
+                        fifo_wr_en       <= 1'b1;
+                        write_fifo_state <= WRITE_SECOND_BYTE;
+                    end else begin
+                        fifo_wr_en <= 1'b0;
+                    end
+                end
+                WRITE_SECOND_BYTE: begin
                     if (!fifo_full) begin
                         fifo_write_data  <= freeze_byte[23:16];
                         fifo_wr_en       <= 1'b1;
