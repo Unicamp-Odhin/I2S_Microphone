@@ -1,5 +1,5 @@
 read_verilog -sv main.sv
-read_verilog -sv ../../i2s_fpga.sv
+read_verilog -sv ../../rtl/i2s_fpga.sv
 
 set_param general.maxThreads 16
 

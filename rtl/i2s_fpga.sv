@@ -4,7 +4,7 @@ module i2s_fpga #(
     parameter int FIFO_DEPTH = 128 * 1024, // 128kB
     parameter int FIFO_WIDTH = 8,
     parameter int CLK_FREQ = 100_000_000,  // Frequência do clock do sistema
-
+    parameter int SIZE_FULL_COUNT = 6
 ) (
     input logic clk,
     input logic rst,
@@ -17,9 +17,9 @@ module i2s_fpga #(
     output logic i2s_ws,
     input logic i2s_sd,
 
-    output full_count,
-    output fifo_empty,
-    output fifo_full
+    output logic [SIZE_FULL_COUNT-1:0] full_count,
+    output logic fifo_empty,
+    output logic fifo_full
 
 );
     logic [2:0] busy_sync;
@@ -30,27 +30,36 @@ module i2s_fpga #(
     logic       pcm_ready;
 
     logic       rst_n;
-    assign rst_n = CPU_RESETN;
+    assign rst_n = ~rst;
 
-    // Clock do microfone
-    parameter COUNTER_SIZE = $clog2(CLK_FREQ / 1_500_000) - 2; // 1.5MHz
-    logic [COUNTER_SIZE:0] counter = 0;
+    // Geração de clock I2S de aproximadamente 1,5 MHz a partir de CLK_FREQ (ex: 100 MHz)
+    // Justificativa: Para gerar 1,5 MHz, precisamos de um clock que oscile (toggle) a cada (CLK_FREQ / (2 * 1_500_000)) ciclos
+    // pois cada ciclo completo de clock exige dois toggles (subida e descida)
+
+    parameter real TARGET_FREQ = 1_500_000;
+    parameter integer CLK_DIV = CLK_FREQ / (2 * TARGET_FREQ); // Divisor para obter 1,5 MHz
+    parameter integer COUNTER_SIZE = $clog2(CLK_DIV);         // Tamanho necessário para representar o divisor
+
+    logic [COUNTER_SIZE-1:0] counter = 0;
+    logic i2s_clk_reg = 0;
+    assign i2s_clk = i2s_clk_reg;
+
     always_ff @(posedge clk) begin
-        if (rst_n) begin
-            if (!~counter) begin
+        if (!rst_n) begin
+            counter <= 0;
+            i2s_clk_reg <= 0;
+        end else begin
+            if (counter == CLK_DIV - 1) begin
                 counter <= 0;
-                i2s_clk <= ~i2s_clk;
+                i2s_clk_reg <= ~i2s_clk_reg;
             end else begin
                 counter <= counter + 1;
             end
-        end else begin
-            counter <= 0;
-            i2s_clk <= 1'b0;
         end
     end
 
+
     logic [23:0] pcm_out;
-    // assign pcm_out = 24'hAC0F1B;
 
     // Instanciação do módulo
     i2s_capture #(
@@ -67,6 +76,17 @@ module i2s_fpga #(
 
     logic [23:0] reduce_out;
 
+
+    // Para estimar o tempo necessário até a memória FIFO encher completamente:
+    //
+    // 1. Determine o tamanho de cada amostra em bytes (nesse caso: 3 bytes por amostra).
+    // 2. Calcule a taxa efetiva de amostragem 
+    //                                         (nesse caso: 24.414 Hz / REDUCE_FACTOR ≈ 12 kHz).
+    // 3. Multiplique o tamanho da amostra pela taxa de amostragem para obter a taxa de dados 
+    //                                         (nesse caso: 2 bytes * 12KHz = 24 kB/s).
+    // 4. Divida a capacidade total da FIFO (em bytes) pela taxa de dados para obter o tempo até encher:
+    //                                          tempo ≈ capacidade_da_FIFO / taxa_de_dados
+    //                                          nesse caso: 64 kB / 24 kB/s ≈ 2.66 segundos
 
     logic        done_reduce;
     sample_reduce #(
@@ -99,19 +119,8 @@ module i2s_fpga #(
     );
 
 
-    logic fifo_wr_en, fifo_rd_en, fifo_full, fifo_empty;
+    logic fifo_wr_en, fifo_rd_en;
     logic [7:0] fifo_read_data, fifo_write_data;
-
-    // Para estimar o tempo necessário até a memória FIFO encher completamente:
-    //
-    // 1. Determine o tamanho de cada amostra em bytes (nesse caso: 3 bytes por amostra).
-    // 2. Calcule a taxa efetiva de amostragem 
-    //                                         (nesse caso: 24.414 Hz / REDUCE_FACTOR ≈ 6 kHz).
-    // 3. Multiplique o tamanho da amostra pela taxa de amostragem para obter a taxa de dados 
-    //                                         (nesse caso: 3 bytes * 6KHz = 18 kB/s).
-    // 4. Divida a capacidade total da FIFO (em bytes) pela taxa de dados para obter o tempo até encher:
-    //                                          tempo ≈ capacidade_da_FIFO / taxa_de_dados
-    //                                          nesse caso: 128 kB / 18 kB/s ≈ 7 segundos
 
     FIFO #(
         .DEPTH(FIFO_DEPTH),  // 128kb
@@ -137,21 +146,13 @@ module i2s_fpga #(
     logic posedge_full;
     assign posedge_full = ~state_full[2] & state_full[1];
 
-    logic [5:0] full_count;
     always_ff @(posedge clk) begin
         if (!rst_n) begin
-            full_count <= 6'b000000;
+            full_count <= '0;
         end else if (posedge_full) begin
             full_count <= full_count + 1;
         end
     end
-
-    typedef enum logic [1:0] {
-        IDLE,
-        WRITE_FIRST_BYTE,
-        WRITE_SECOND_BYTE,
-        WRITE_THIRD_BYTE
-    } write_fifo_state_t;
 
     write_fifo_state_t        write_fifo_state;
 
@@ -191,7 +192,15 @@ module i2s_fpga #(
     assign write_fifo = ~|(counter_write_fifo % (FREQUENCY_SINC - 1)) ? 24'hAAFF00 : reduce_out;
 
 
-    // Estado do FIFO
+    typedef enum logic [1:0] {
+        IDLE,
+        WRITE_FIRST_BYTE,
+        WRITE_SECOND_BYTE,
+        WRITE_THIRD_BYTE
+    } write_fifo_state_t;
+
+    // Estado do FIFO, pode guardar os 3 bytes, mas por questão de economia de espaço
+    // irei ignorar o byte menos significativo
     always_ff @(posedge clk) begin
         fifo_wr_en <= 1'b0;
 
@@ -203,7 +212,7 @@ module i2s_fpga #(
                 IDLE: begin
                     if (done_reduce_sync && !fifo_full) begin
                         freeze_byte      <= write_fifo;
-                        fifo_write_data  <= write_fifo[7:0];
+                        fifo_write_data  <= write_fifo[15:8];
                         fifo_wr_en       <= 1'b1;
                         write_fifo_state <= WRITE_FIRST_BYTE;
                     end else begin
@@ -211,15 +220,6 @@ module i2s_fpga #(
                     end
                 end
                 WRITE_FIRST_BYTE: begin
-                    if (!fifo_full) begin
-                        fifo_write_data  <= freeze_byte[15:8];
-                        fifo_wr_en       <= 1'b1;
-                        write_fifo_state <= WRITE_SECOND_BYTE;
-                    end else begin
-                        fifo_wr_en <= 1'b0;
-                    end
-                end
-                WRITE_SECOND_BYTE: begin
                     if (!fifo_full) begin
                         fifo_write_data  <= freeze_byte[23:16];
                         fifo_wr_en       <= 1'b1;

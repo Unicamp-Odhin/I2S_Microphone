@@ -1,7 +1,7 @@
 module top (
     input logic clk,
 
-    output logic [15:0] LED,
+    output logic [7:0] LED,
 
     input  logic mosi,
     output logic miso,
@@ -21,6 +21,7 @@ module top (
         .FIFO_WIDTH(8),
         .DATA_SIZE(24),
         .REDUCE_FACTOR(2),
+        .SIZE_FULL_COUNT(14)
     ) u_i2s_fpga (
         .clk       (clk),
         .rst       (rst),
@@ -31,9 +32,9 @@ module top (
 
         .i2s_clk   (i2s_clk),
         .i2s_ws    (i2s_ws),
-        .i2s_sd    (i2s_sd)
+        .i2s_sd    (i2s_sd),
 
-        .full_count(LED[15:2]),
+        .full_count(LED[7:2]),
         .fifo_empty(LED[1]),
         .fifo_full (LED[0])
     );
