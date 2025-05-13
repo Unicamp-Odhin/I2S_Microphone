@@ -23,9 +23,9 @@ module i2s_capture #(
     logic [COUNTER_SIZE-1:0] counter;
 
     logic i2s_posedge;
-    logic [1:0] edge_counter;
+    logic [2:0] edge_counter;
 
-    always_ff @(posedge clk) begin
+    always_ff @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             counter      <= 0;
             i2s_clk      <= 0;
@@ -38,11 +38,11 @@ module i2s_capture #(
                 counter <= counter + 1;
             end
 
-            edge_counter <= {edge_counter[0], i2s_clk};
+            edge_counter <= {edge_counter[1:0], i2s_clk};
         end
     end
 
-    assign i2s_posedge = !edge_counter[1] & edge_counter[0];
+    assign i2s_posedge = !edge_counter[2] & edge_counter[1];
 
 
     logic [8:0] bit_count;
@@ -52,7 +52,7 @@ module i2s_capture #(
 
     // Essa lógica demora 64 ciclos de clock para fazer a leitura do dado, logo
     // a taxa de amostragem é 24414Hz
-    always_ff @(posedge clk) begin
+    always_ff @(posedge clk or negedge rst_n) begin
         ready <= 1'b0;
 
         if (!rst_n) begin
