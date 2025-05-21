@@ -29,6 +29,14 @@
     o valor de 3MHz isso não acontece
 */
 
+// Configuração do pino de reset
+#define GPIO_NUMBER "44"
+#define GPIO_PATH "/sys/class/gpio"
+#define GPIO_EXPORT GPIO_PATH "/export"
+#define GPIO_DIR_PATH GPIO_PATH "/gpio" GPIO_NUMBER
+#define GPIO_DIR GPIO_DIR_PATH "/direction"
+#define GPIO_VAL GPIO_DIR_PATH "/value"
+
 // CONFIGURAÇÕES DO SISTEMA DE AQUISIÇÃO
 #define READ_SIZE     (3 * 1024 * 1024)  // Quantidade total de bytes a serem lidos
 #define PAGE_SIZE     (1024 * 3)    // Leitura por operação (múltiplo de 3)
@@ -39,6 +47,58 @@
 static uint32_t SPEED = 3000000;
 static uint8_t BITS_PER_WORD = 8;
 static uint8_t MODE = 0;
+
+static int gpio_write(const char *path, const char *value) {
+    int fd = open(path, O_WRONLY);
+    if (fd == -1) {
+        perror(path);
+        return -1;
+    }
+
+    if (write(fd, value, strlen(value)) == -1) {
+        perror(path);
+        close(fd);
+        return -1;
+    }
+
+    close(fd);
+    return 0;
+}
+
+static int gpio_export() {
+    return gpio_write(GPIO_EXPORT, GPIO_NUMBER);
+}
+
+static int gpio_set_direction(const char *direction) {
+    return gpio_write(GPIO_DIR, direction);
+}
+
+static int gpio_set_value(int value) {
+    return gpio_write(GPIO_VAL, value ? "1" : "0");
+}
+
+static int reset_fpga() {
+    if (gpio_export() == -1) {
+        fprintf(stderr, "Aviso: GPIO pode já estar exportado.\n");
+    }
+
+    usleep(100000); // 100ms
+
+    if (gpio_set_direction("out") == -1)
+        return 1;
+
+    if (gpio_set_value(1) == -1)
+        return 1;
+
+    usleep(100000); // 100ms
+
+    if (gpio_set_value(0) == -1)
+        return 1;
+
+    printf("GPIO %s resetado com sucesso.\n", GPIO_NUMBER);
+    return 0;
+}
+
 
 static void pabort(const char *s) {
     perror(s);
@@ -148,6 +208,7 @@ int main(void) {
     printf("Buffer de aquisição: %d KB\n", MEMORY_SIZE / 1024);
     printf("Amostras por segundo: %d, tamanho da amostra: %d bytes\n\n", SAMPLE_RATE, SAMPLE_SIZE);
 
+    reset_fpga();
     read_and_save(fd, "dump.hex");
 
     close(fd);
