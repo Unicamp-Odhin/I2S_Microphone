@@ -6,6 +6,7 @@ read_verilog -sv ../../rtl/leds.sv
 read_verilog -sv ../../rtl/sample_reduce.sv
 read_verilog -sv ../../rtl/spi_slave.sv
 read_verilog -sv ../../rtl/i2s.sv
+read_verilog -sv ../../rtl/fir_filter.sv
 
 
 read_xdc "pinout.xdc"

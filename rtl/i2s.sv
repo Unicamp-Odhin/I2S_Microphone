@@ -63,10 +63,27 @@ module I2S #(
         .done           (done_reduce),
         .audio_data_out (reduce_out)
     );
+/*
+    logic        fir_ready;
+    logic [23:0] fir_out;
 
-//    assign pcm_ready = done_reduce;
-//    assign pcm_out   = reduce_out;
+    fir_pipeline #(
+        .DATA_WIDTH (24),
+        .TAP_NUM    (64)
+    ) fir_inst (
+        .clk       (clk),
+        .rst_n     (rst_n),
 
+        .in_valid  (done_reduce),
+        .in_data   (reduce_out),
+
+        .out_valid (fir_ready),
+        .out_data  (fir_out)
+    );
+*/
+    assign pcm_ready = done_reduce;
+    assign pcm_out   = reduce_out;
+/*
     localparam DIFF = I2S_DATA_SIZE - DATA_OUT_SIZE;
     localparam ROUND_VALUE = 2 ^ (DIFF - 1);
 
@@ -88,6 +105,6 @@ module I2S #(
             pcm_out   <= sum_data >>> DIFF;
         end
     end
-
+*/
     
 endmodule
