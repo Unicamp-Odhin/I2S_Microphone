@@ -9,6 +9,7 @@ module top (
     input  logic cs,
 
     input  logic rst,
+    input  logic soft_reset, 
 
     output logic i2s_clk,  // Clock do I2S
     output logic i2s_ws,   // Word Select do I2S
@@ -25,7 +26,7 @@ module top (
         .SIZE_FULL_COUNT (14)
     ) u_i2s_fpga (
         .clk       (clk),
-        .rst_n     (!rst),
+        .rst_n     (!(rst | soft_reset)),
         
         .mosi      (mosi),
         .miso      (miso),

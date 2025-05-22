@@ -115,7 +115,7 @@ set_property PACKAGE_PIN AA4 [get_ports {mosi}];  # "JC2_N"
 set_property PACKAGE_PIN Y4  [get_ports {miso}];  # "JC2_P"
 set_property PACKAGE_PIN T6  [get_ports {sck}];  # "JC3_N"
 set_property PACKAGE_PIN R6  [get_ports {cs}];  # "JC3_P"
-#set_property PACKAGE_PIN U4  [get_ports {JC4_N}];  # "JC4_N"
+set_property PACKAGE_PIN U4  [get_ports {soft_reset}];  # "JC4_N"
 #set_property PACKAGE_PIN T4  [get_ports {JC4_P}];  # "JC4_P"
 
 # ----------------------------------------------------------------------------
