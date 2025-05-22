@@ -10,7 +10,7 @@ module top (
     input  logic cs,
 
     input logic CPU_RESETN,
-    // TODO: adicionar um outro final de reset, que permita a reinicialização do módulo via software
+    input logic soft_reset,
 
     output logic i2s_clk,  // Clock do I2S
     output logic i2s_ws,   // Word Select do I2S
@@ -20,14 +20,14 @@ module top (
     i2s_fpga #(
         .CLK_FREQ        (100_000_000),  // Frequência do clock do sistema
         .I2S_CLK_FREQ    (1_500_000),
-        .FIFO_DEPTH      (512 * 1024), // 64kB
+        .FIFO_DEPTH      (512 * 1024), 
         .FIFO_WIDTH      (8),
         .DATA_SIZE       (24),
         .REDUCE_FACTOR   (2),
         .SIZE_FULL_COUNT (14)
     ) u_i2s_fpga (
         .clk       (clk),
-        .rst_n     (CPU_RESETN),
+        .rst_n     (CPU_RESETN & ~soft_reset),
         
         .mosi      (mosi),
         .miso      (miso),
