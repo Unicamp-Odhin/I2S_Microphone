@@ -27,7 +27,7 @@ module top (
         .SIZE_FULL_COUNT (14)
     ) u_i2s_fpga (
         .clk       (clk),
-        .rst_n     (CPU_RESETN & ~soft_reset),
+        .rst_n     (CPU_RESETN | ~soft_reset),
         
         .mosi      (mosi),
         .miso      (miso),
