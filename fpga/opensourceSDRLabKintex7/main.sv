@@ -8,11 +8,16 @@ module top (
     output logic miso,
     input  logic sck,
     input  logic cs,
+    input  logic spi_rst,
 
     output logic i2s_clk,  // Clock do I2S
     output logic i2s_ws,   // Word Select do I2S
     input  logic i2s_sd    // Dados do I2S
 );
+
+    logic sys_rst_n;
+
+    assign sys_rst_n = rst_n | ~spi_rst;
 
     i2s_fpga #(
         .CLK_FREQ        (50_000_000),  // Frequência do clock do sistema
@@ -24,7 +29,7 @@ module top (
         .SIZE_FULL_COUNT (6)
     ) u_i2s_fpga (
         .clk        (clk),
-        .rst_n      (rst_n),
+        .rst_n      (sys_rst_n),
         
         .mosi       (mosi),
         .miso       (miso),

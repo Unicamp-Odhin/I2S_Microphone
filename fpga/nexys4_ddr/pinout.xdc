@@ -106,6 +106,7 @@ set_property -dict { PACKAGE_PIN C17   IOSTANDARD LVCMOS33 } [get_ports { mosi }
 set_property -dict { PACKAGE_PIN D18   IOSTANDARD LVCMOS33 } [get_ports { miso }]; #IO_L21N_T3_DQS_A18_15 Sch=ja[2]
 set_property -dict { PACKAGE_PIN E18   IOSTANDARD LVCMOS33 } [get_ports { sck }]; #IO_L21P_T3_DQS_15 Sch=ja[3]
 set_property -dict { PACKAGE_PIN G17   IOSTANDARD LVCMOS33 } [get_ports { cs }]; #IO_L18N_T2_A23_15 Sch=ja[4]
+set_property -dict { PACKAGE_PIN D17   IOSTANDARD LVCMOS33 } [get_ports { soft_reset }]; #IO_L16N_T2_A27_15 Sch=ja[7]
 
 
 ##Pmod Header JB
