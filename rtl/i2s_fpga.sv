@@ -17,6 +17,7 @@ module i2s_fpga #(
 
     output logic i2s_clk,
     output logic i2s_ws,
+    output logic i2s_lr,
     input  logic i2s_sd,
 
     output logic [SIZE_FULL_COUNT-1:0] full_count,
@@ -210,5 +211,6 @@ module i2s_fpga #(
     end
 
     assign busy_posedge = (busy_sync[2:1] == 2'b01) ? 1'b1 : 1'b0;
+    assign i2s_lr       = 0; // Não usado, mas necessário para o I2S
 
 endmodule

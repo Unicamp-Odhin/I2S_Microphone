@@ -12,6 +12,7 @@ module top (
 
     output logic i2s_clk,  // Clock do I2S
     output logic i2s_ws,   // Word Select do I2S
+    output logic i2s_lr,   // Left/Right Select do I2S
     input  logic i2s_sd    // Dados do I2S
 );
 
@@ -38,6 +39,7 @@ module top (
  
         .i2s_clk    (i2s_clk),
         .i2s_ws     (i2s_ws),
+        .i2s_lr     (i2s_lr),
         .i2s_sd     (i2s_sd),
  
         .full_count (led[7:2]),
