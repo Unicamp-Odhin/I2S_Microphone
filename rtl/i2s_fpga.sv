@@ -25,7 +25,7 @@ module i2s_fpga #(
     output logic fifo_full
 
 );
-    localparam I2S_DATA_OUT_SIZE = 16;
+    localparam I2S_DATA_OUT_SIZE = 24;
 
     logic [2:0] busy_sync;
     logic data_in_valid, busy, data_out_valid, busy_posedge;
@@ -79,8 +79,8 @@ module i2s_fpga #(
     logic [7:0] fifo_read_data, fifo_write_data;
 
     FIFO #(
-        .DEPTH (FIFO_DEPTH),  // 128kb
-        .WIDTH (FIFO_WIDTH)
+        .DEPTH        (FIFO_DEPTH),
+        .WIDTH        (FIFO_WIDTH)
     ) tx_fifo (
         .clk          (clk),
         .rst_n        (rst_n),
@@ -148,13 +148,13 @@ module i2s_fpga #(
                     if (!fifo_full) begin
                         fifo_write_data  <= freeze_byte[15:8];
                         fifo_wr_en       <= 1'b1;
-                        //write_fifo_state <= WRITE_SECOND_BYTE;
-                        write_fifo_state <= WRITE_THIRD_BYTE;
+                        write_fifo_state <= WRITE_SECOND_BYTE;
+                        //write_fifo_state <= WRITE_THIRD_BYTE;
                     end else begin
                         fifo_wr_en <= 1'b0;
                     end
                 end
-                /*WRITE_SECOND_BYTE: begin
+                WRITE_SECOND_BYTE: begin
                     if (!fifo_full) begin
                         fifo_write_data  <= freeze_byte[23:16];
                         fifo_wr_en       <= 1'b1;
@@ -162,7 +162,7 @@ module i2s_fpga #(
                     end else begin
                         fifo_wr_en <= 1'b0;
                     end
-                end*/
+                end
                 WRITE_THIRD_BYTE: begin
                     write_fifo_state <= IDLE;
                 end
@@ -184,7 +184,7 @@ module i2s_fpga #(
         end else begin
             if (busy_posedge) begin
                 if (fifo_empty) begin
-                    data_in_valid <= 1'b1;
+                    data_in_valid   <= 1'b1;
                 end else begin
                     fifo_rd_en      <= 1'b1;
                     write_back_fifo <= 1'b1;

@@ -18,8 +18,9 @@ module top (
 
     logic sys_rst_n;
 
-    assign sys_rst_n = rst_n | ~spi_rst;
-
+    //assign sys_rst_n = rst_n | ~spi_rst;
+    assign sys_rst_n = rst_n;
+    
     i2s_fpga #(
         .CLK_FREQ        (50_000_000),  // Frequência do clock do sistema
         .I2S_CLK_FREQ    (1_500_000),

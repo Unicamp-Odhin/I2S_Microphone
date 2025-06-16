@@ -1,5 +1,5 @@
 module sample_reduce #(
-    parameter int DATA_SIZE = 24,
+    parameter int DATA_SIZE     = 24,
     parameter int REDUCE_FACTOR = 4
 ) (
     input  logic                 clk,
