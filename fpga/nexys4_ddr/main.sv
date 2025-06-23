@@ -1,6 +1,8 @@
-// AAAAAAAAAAAAAAAAAAAAAAAAAAAa
+//`define COMPRESS_OUT 1
+//`define SPI_RST_EN 1
+
 module top (
-    input logic clk,  // Esse clock na nexys4 é 100MHz
+    input logic clk,  // 100MHz
 
     output logic [15:0] LED,
 
@@ -17,6 +19,14 @@ module top (
     input  logic i2s_sd    // Dados do I2S
 );
 
+    logic sys_rst_n;
+
+`ifdef SPI_RST_EN
+    assign sys_rst_n = CPU_RESETN & !soft_reset;
+`else
+    assign sys_rst_n = CPU_RESETN;
+`endif
+
     i2s_fpga #(
         .CLK_FREQ        (100_000_000),  // Frequência do clock do sistema
         .I2S_CLK_FREQ    (1_500_000),
@@ -27,7 +37,7 @@ module top (
         .SIZE_FULL_COUNT (14)
     ) u_i2s_fpga (
         .clk       (clk),
-        .rst_n     (CPU_RESETN | ~soft_reset),
+        .rst_n     (sys_rst_n),
         
         .mosi      (mosi),
         .miso      (miso),

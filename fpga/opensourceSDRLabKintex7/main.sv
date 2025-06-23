@@ -1,7 +1,8 @@
-//`define COMPRESS_OUT 1
+`define COMPRESS_OUT 1
+//`define SPI_RST_EN 1
 
 module top (
-    input logic clk,
+    input logic clk, // 50MHz
     input logic rst_n,
 
     output logic [7:0] led,
@@ -20,9 +21,12 @@ module top (
 
     logic sys_rst_n;
 
-    //assign sys_rst_n = rst_n | ~spi_rst;
+`ifdef SPI_RST_EN
+    assign sys_rst_n = (rst_n && ~spi_rst);
+`else
     assign sys_rst_n = rst_n;
-    
+`endif
+
     i2s_fpga #(
         .CLK_FREQ        (50_000_000),  // Frequência do clock do sistema
         .I2S_CLK_FREQ    (1_500_000),
