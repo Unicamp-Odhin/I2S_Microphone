@@ -9,7 +9,7 @@ Thank you for considering contributing to the Project! We are happy to welcome c
 2. **Clone the Repository**: Clone the forked repository to your local development environment.
 
    ```bash
-   git clone https://github.com/Unicamp-Odhin/i2s.git
+   git clone https://github.com/Unicamp-Odhin/I2S_Microphone.git
    ```
 
 3. **Create a Branch**: Create a branch for your contribution. Be sure to choose a descriptive name.
@@ -51,4 +51,4 @@ Thank you for considering contributing to the Project! We are happy to welcome c
 
 ## License
 
-By contributing to this project, you agree that your contributions will be licensed under the same license as the project. Read the [license](https://github.com/Unicamp-Odhin/i2s/blob/main/LICENSE) for more details.
+By contributing to this project, you agree that your contributions will be licensed under the same license as the project. Read the [license](https://github.com/Unicamp-Odhin/I2S_Microphone/blob/main/LICENSE) for more details.
