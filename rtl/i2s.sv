@@ -15,6 +15,10 @@ module I2S #(
     output logic [DATA_OUT_SIZE - 1:0] pcm_out,
     output logic pcm_ready
 );
+    localparam DIFF = I2S_DATA_SIZE - DATA_OUT_SIZE;
+    localparam ROUND_VALUE = (1 << (DIFF - 1));
+    localparam GAIN_SHIFT = 3; // 3
+
 
     logic        i2s_ready;
     logic [23:0] i2s_out;
@@ -81,16 +85,38 @@ module I2S #(
         .out_data  (fir_out)
     );
 */
-    assign pcm_ready = done_reduce;
-    assign pcm_out   = reduce_out;
+    //assign pcm_ready = done_reduce;
+    //assign pcm_out   = reduce_out;
+
+logic sum_ready;
+logic [I2S_DATA_SIZE + GAIN_SHIFT :0] sum_data;
+
+
+generate
+    if (DATA_OUT_SIZE == 16) begin
+        always_ff @(posedge clk or negedge rst_n) begin
+            if(!rst_n) begin
+                sum_ready <= 0;
+                sum_data  <= 0;
+                pcm_ready <= 0;
+                pcm_out   <= 0;
+            end else begin
+                sum_ready <= done_reduce;
+                //sum_data  <= reduce_out[23:8] + ((reduce_out[7:0] >= 'd128) ? 1 : 0);
+                sum_data <= {reduce_out[23], reduce_out} << GAIN_SHIFT;
+
+                pcm_ready <= sum_ready;
+                //pcm_out   <= sum_data;
+                pcm_out   <= sum_data[I2S_DATA_SIZE - 1 + GAIN_SHIFT : DIFF + GAIN_SHIFT] + 
+                    ((sum_data[DIFF - 1 + GAIN_SHIFT : 0] >= ROUND_VALUE) ? 1 : 0);
+            end
+        end
+    end else begin
+        assign pcm_ready = done_reduce;
+        assign pcm_out   = reduce_out;
+    end
+endgenerate
 /*
-    localparam DIFF = I2S_DATA_SIZE - DATA_OUT_SIZE;
-    localparam ROUND_VALUE = 2 ^ (DIFF - 1);
-
-
-    logic sum_ready;
-    logic [I2S_DATA_SIZE - 1: 0] sum_data;
-
     always_ff @(posedge clk or negedge rst_n) begin
         if(!rst_n) begin
             sum_ready <= 0;
@@ -99,10 +125,13 @@ module I2S #(
             pcm_out   <= 0;
         end else begin
             sum_ready <= done_reduce;
-            sum_data  <= reduce_out + ROUND_VALUE;
+            //sum_data  <= reduce_out[23:8] + ((reduce_out[7:0] >= 'd128) ? 1 : 0);
+            sum_data <= {reduce_out[23], reduce_out} << GAIN_SHIFT;
 
             pcm_ready <= sum_ready;
-            pcm_out   <= sum_data >>> DIFF;
+            //pcm_out   <= sum_data;
+            pcm_out   <= sum_data[I2S_DATA_SIZE - 1 + GAIN_SHIFT : DIFF + GAIN_SHIFT] + 
+                ((sum_data[DIFF - 1 + GAIN_SHIFT : 0] >= (1 << (DIFF - 1))) ? 1 : 0);
         end
     end
 */

@@ -91,7 +91,8 @@ int main(int argc, char *argv[]) {
             uint32_t byte3 = (strtol(line, NULL, 16)) & 0xFF;
 
             // uint32_t sample = (byte3 << 16) | (byte2 << 8) | byte1;
-            uint32_t sample = ((byte2 << 16) | (byte3 << 8) | byte1) << 5;
+            // uint32_t sample = ((byte2 << 16) | (byte3 << 8) | byte1) << 5;
+            uint32_t sample = ((byte2 << 16) | (byte3 << 8) | byte1);
             // uint32_t sample = (byte3 << 16) | (byte1 << 8) | byte2;
             // uint32_t sample = (byte1 << 16) | (byte2 << 8) | byte3;
 

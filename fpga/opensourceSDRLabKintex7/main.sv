@@ -1,3 +1,5 @@
+//`define COMPRESS_OUT 1
+
 module top (
     input logic clk,
     input logic rst_n,

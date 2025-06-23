@@ -25,7 +25,11 @@ module i2s_fpga #(
     output logic fifo_full
 
 );
+    `ifdef COMPRESS_OUT
+    localparam I2S_DATA_OUT_SIZE = 16;
+    `else
     localparam I2S_DATA_OUT_SIZE = 24;
+    `endif
 
     logic [2:0] busy_sync;
     logic data_in_valid, busy, data_out_valid, busy_posedge;
@@ -148,12 +152,16 @@ module i2s_fpga #(
                     if (!fifo_full) begin
                         fifo_write_data  <= freeze_byte[15:8];
                         fifo_wr_en       <= 1'b1;
+                        `ifdef COMPRESS_OUT
+                        write_fifo_state <= WRITE_THIRD_BYTE;
+                        `else
                         write_fifo_state <= WRITE_SECOND_BYTE;
-                        //write_fifo_state <= WRITE_THIRD_BYTE;
+                        `endif
                     end else begin
                         fifo_wr_en <= 1'b0;
                     end
                 end
+                `ifndef COMPRESS_OUT
                 WRITE_SECOND_BYTE: begin
                     if (!fifo_full) begin
                         fifo_write_data  <= freeze_byte[23:16];
@@ -163,6 +171,7 @@ module i2s_fpga #(
                         fifo_wr_en <= 1'b0;
                     end
                 end
+                `endif
                 WRITE_THIRD_BYTE: begin
                     write_fifo_state <= IDLE;
                 end
