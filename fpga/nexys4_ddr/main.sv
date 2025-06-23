@@ -36,21 +36,21 @@ module top (
         .REDUCE_FACTOR   (2),
         .SIZE_FULL_COUNT (14)
     ) u_i2s_fpga (
-        .clk       (clk),
-        .rst_n     (sys_rst_n),
+        .clk        (clk),
+        .rst_n      (sys_rst_n),
         
-        .mosi      (mosi),
-        .miso      (miso),
-        .cs        (cs),
-        .sck       (sck),
+        .mosi       (mosi),
+        .miso       (miso),
+        .cs         (cs),
+        .sck        (sck),
 
-        .i2s_clk   (i2s_clk),
-        .i2s_ws    (i2s_ws),
-        .i2s_sd    (i2s_sd),
+        .i2s_clk    (i2s_clk),
+        .i2s_ws     (i2s_ws),
+        .i2s_sd     (i2s_sd),
 
-        .full_count(LED[15:2]),
-        .fifo_empty(LED[1]),
-        .fifo_full (LED[0])
+        .full_count (LED[15:2]),
+        .fifo_empty (LED[1]),
+        .fifo_full  (LED[0])
     );
 
 endmodule
