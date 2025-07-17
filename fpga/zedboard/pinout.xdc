@@ -84,9 +84,11 @@ set_property PACKAGE_PIN Y9 [get_ports {clk}];  # "GCLK"
 # ----------------------------------------------------------------------------
 # JA Pmod - Bank 13 
 # ---------------------------------------------------------------------------- 
-set_property PACKAGE_PIN Y11  [get_ports {i2s_ws}];  # "JA1" #WS
-set_property PACKAGE_PIN Y10  [get_ports {i2s_sd}];  # "JA3"  #SD
-set_property PACKAGE_PIN AA9  [get_ports {i2s_clk}];  # "JA4"   #SCK 
+set_property PACKAGE_PIN Y11  [get_ports {i2s_sd}];  # "JA1" #WS
+set_property PACKAGE_PIN AA11 [get_ports {i2s_clk}]; # "JA2"
+set_property PACKAGE_PIN Y10  [get_ports {i2s_lr}];  # "JA3"  #SD
+set_property PACKAGE_PIN AA9  [get_ports {i2s_ws}];  # "JA4"   #SCK
+
 #set_property PACKAGE_PIN AA8  [get_ports {JA10}];  # "JA10"
 #set_property PACKAGE_PIN AA11 [get_ports {JA2}];  # "JA2"
 #set_property PACKAGE_PIN AB11 [get_ports {JA7}];  # "JA7"
