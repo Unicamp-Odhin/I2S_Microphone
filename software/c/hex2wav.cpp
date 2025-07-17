@@ -21,23 +21,32 @@ typedef struct {
 } WavHeader;
 
 int main(int argc, char *argv[]) {
-    if (argc != 5 || strcmp(argv[1], "--bytes_sample") != 0 || 
-    (strcmp(argv[2], "2") != 0 && strcmp(argv[2], "3") != 0) ||
-    strcmp(argv[3], "--sample_rate") != 0) {
-        fprintf(stderr, "Uso: %s --bytes_sample [2|3] --sample_rate <valor>\n", argv[0]);
+    if (argc != 6 || strcmp(argv[1], "--bytes_sample") != 0 ||
+        (strcmp(argv[2], "2") != 0 && strcmp(argv[2], "3") != 0) ||
+        strcmp(argv[3], "--sample_rate") != 0) {
+        fprintf(stderr, "Uso: %s --bytes_sample [2|3] --sample_rate <valor> <input_file>\n", argv[0]);
         return 1;
     }
 
-    const uint16_t bytes_per_sample = atoi(argv[2]);
-    const uint32_t sample_rate = atoi(argv[4]);
+    const uint16_t bytes_per_sample = (uint16_t)atoi(argv[2]);
+    const uint32_t sample_rate = (uint32_t)atoi(argv[4]);
 
     const uint16_t num_channels = 1;                    // Mono
-    const uint16_t bits_per_sample = 8 * bytes_per_sample; 
+    const uint16_t bits_per_sample = 8 * bytes_per_sample;
 
+    const char *input_filename = argv[5];
+    char output_filename[256];
+    strncpy(output_filename, input_filename, sizeof(output_filename) - 1);
+    output_filename[sizeof(output_filename) - 1] = '\0';
 
-    const char *input_filename = "dump.hex";
-    const char *output_filename = "dump.wav";
-
+    // Verifica extensão .hex e troca por .wav
+    char *ext = strrchr(output_filename, '.');
+    if (ext && strcmp(ext, ".hex") == 0) {
+        strcpy(ext, ".wav");
+    } else {
+        fprintf(stderr, "Erro: O arquivo de entrada deve ter a extensão .hex\n");
+        return 1;
+    }
 
     FILE *input_file = fopen(input_filename, "r");
     if (!input_file) {
@@ -51,14 +60,13 @@ int main(int argc, char *argv[]) {
         if (strstr(line, "000000") == NULL) {
             num_samples++;
         }
-        //num_samples++;
     }
     rewind(input_file);
 
     uint32_t data_size = num_samples * num_channels * bytes_per_sample;
 
     // Criar cabeçalho WAV
-    WavHeader header;
+    WavHeader header = {};
     memcpy(header.riff, "RIFF", 4);
     header.file_size = 36 + data_size;
     memcpy(header.wave, "WAVE", 4);
@@ -90,16 +98,7 @@ int main(int argc, char *argv[]) {
             uint32_t byte2 = (strtol(line, NULL, 16) >> 8) & 0xFF;
             uint32_t byte3 = (strtol(line, NULL, 16)) & 0xFF;
 
-            // uint32_t sample = (byte3 << 16) | (byte2 << 8) | byte1;
-            // uint32_t sample = ((byte2 << 16) | (byte3 << 8) | byte1) << 5;
             uint32_t sample = ((byte2 << 16) | (byte3 << 8) | byte1);
-            // uint32_t sample = (byte3 << 16) | (byte1 << 8) | byte2;
-            // uint32_t sample = (byte1 << 16) | (byte2 << 8) | byte3;
-
-            /*
-                Está com esse tanto de linhas comentadas porque pode haver um problema de 
-                sincronização. Então pode ser uma permutação desses 3 bytes
-            */
 
             fwrite(&sample, bytes_per_sample, 1, output_file);
         }
